@@ -1,8 +1,11 @@
 import datetime
 from decimal import Decimal
 import hmac
+import string
 from symtable import Symbol
 import time
+from tokenize import String
+from unittest import result
 from flask import Flask,jsonify,request
 import hashlib,json,threading,hmac,requests,time, websocket
 import ssl
@@ -12,9 +15,10 @@ from datetime import datetime
 import pytz
 from datetime import datetime
 from kafka import KafkaProducer,KafkaConsumer
-from DataController.binance import createCryptoOrder
-from DataModel.binance import CRYPTOORDER
-
+from DataController.binance import createBinanceTradeOrder, createCryptoOrder, getActiveOrders, getBinanceTradeOrder, updateBinanceTradeOrder, updateCryptoOrder
+from DataModel.binance import BinanceTradeOrderStatus, CryptoOrderStatus
+from colorama import Fore
+import types
 
 class BinanceAPIException(Exception):
     
@@ -161,12 +165,12 @@ class Binance:
     def createUserSocket(self,path,onmessage=None):
         while True:
             try:
-                print( "Created new Socket" )
-                print("Getting old listen key")
+                # print( "Created new Socket" )
+                # print("Getting old listen key")
                 listentoken = self.stream_get_listen_key()
-                print("Closing old listen key")
+                # print("Closing old listen key")
                 self.stream_close(listenKey=listentoken)
-                print("Getting new listen key")
+                # print("Getting new listen key")
                 listentoken = self.stream_get_listen_key()
                 websocket.enableTrace(True)
                 if onmessage==None:
@@ -180,22 +184,25 @@ class Binance:
             except Exception as e:
                 print(str(e))
            
+    def on_message_binance_order(self,message):
+        print("WebSocket: ",str(message))
+        
     def createUserDataStreamSocket(self,path,onmessage=None):
         while True:
             try:
-                print( "Created new Socket" )
-                print("Getting old listen key")
+                # print( "Created new Socket" )
+                # print("Getting old listen key")
                 listentoken = self.stream_get_listen_key()
-                print("Closing old listen key")
+                # print("Closing old listen key")
                 self.stream_close(listenKey=listentoken)
-                print("Getting new listen key")
+                # print("Getting new listen key")
                 listentoken = self.stream_get_listen_key()
                 websocket.enableTrace(True)
                 if onmessage==None:
-                    onmessage = self.on_message
+                    onmessage = self.on_message_binance_order
                 #url = "wss://stream.binance.com:9443/stream?streams="+ listentoken
                 url = "wss://testnet.binance.vision/stream?streams=" + listentoken
-                print(str(url))
+                # print(str(url))
                 ws = websocket.WebSocketApp(url,on_message=onmessage)
                 print("Socket Created")
                 ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
@@ -864,6 +871,9 @@ class Binance:
 
     def get_user_assets(self,**params):
         return self._request_withdraw_api('post','asset/getUserAsset', True, data=params,)
+
+    def cancel_all_open_orders(self, **params):
+        return self._delete('openOrders', True, data=params)
     
  
 app = Flask(__name__)
@@ -977,6 +987,16 @@ def cancelorder():
     result = binance.cancel_order(symbol=request_data.get("symbol"),orderId = request_data.get("orderId"))
     return jsonify({"status":"success","message":result})
 
+
+@app.route('/delete/allopenorders',methods=['POST'])
+def deleteAllOpenOrder():
+    binance = Binance()
+    request_data = request.get_json()
+    result = binance.cancel_all_open_orders(symbol=request_data['symbol'])
+    return jsonify({"status":"success","message":result})
+    
+    
+
 # need to be moved
 def cryptoOrderBookRefresh(*argv):
     try:
@@ -1006,9 +1026,9 @@ def cryptoOrderBookRefresh(*argv):
             print(f"Top Bid {topbids}")
             print(f"Top Ask {topasks}")
         except:
-            logging.exception("sefdvcse")
+            print("sefdvcse")
     except Exception as e:
-        logging.exception(f'watch {str(e)}')
+        print(f'watch {str(e)}')
 
 # need to be moved        
 
@@ -1033,29 +1053,31 @@ def initsocket():
 
 def serializer(message):
     return json.dumps(message).encode('utf-8') 
+def deserializer(message):
+    return json.loads(message).decode('utf-8') 
 
-def watchBinanceCyptoOrders(*argv):
-    try:
-        message = json.loads(list(argv)[1])
-        message = message['data']
-        print(f"Message -> {str(message)}")
-        if message['e']=='outboundAccountPosition':
-            logging.info(str(["watchCyptoOrders", list(argv)]))
-        elif message['e']=='executionReport':
+# def watchBinanceCyptoOrders(*argv):
+#     try:
+#         message = json.loads(list(argv)[1])
+#         message = message['data']
+#         print(f"Message -> {str(message)}")
+#         if message['e']=='outboundAccountPosition':
+#             logging.info(str(["watchCyptoOrders", list(argv)]))
+#         elif message['e']=='executionReport':
             
-            orderId = message['i']
-            partitionId = orderId % partitionCount
+#             orderId = message['i']
+#             partitionId = orderId % partitionCount
             
-            Kafka.producer.send('trade', message,partition=partitionId)
-            print("event produced")
-            if  message['X']=='PARTIALLY_FILLED':
-                print("PARTIALLY_FILLED")
-            if message['X'] == 'FILLED':
-                print("FILLED")
-            print(str(message))
-            logging.info(str(["watchCyptoOrders:",message,message['i'],message['X'],message['x']]))
-    except:
-        logging.exception("")
+#             Kafka.producer.send('trade', message,partition=partitionId)
+#             print("event produced")
+#             if  message['X']=='PARTIALLY_FILLED':
+#                 print("PARTIALLY_FILLED")
+#             if message['X'] == 'FILLED':
+#                 print("FILLED")
+#             print(str(message))
+#             logging.info(str(["watchCyptoOrders:",message,message['i'],message['X'],message['x']]))
+#     except:
+#         print("")
 
 class Kafka():       
     producer = KafkaProducer(
@@ -1065,7 +1087,7 @@ class Kafka():
     def getPartitionCount():
         consumer = KafkaConsumer(
             "trade",
-            bootstrap_servers='localhost:29092'
+            bootstrap_servers='localhost:29092',
         )
         partitions = consumer.partitions_for_topic("trade")
         print(len(partitions))
@@ -1077,32 +1099,194 @@ partitionCount = None
 #################################################---NEW JOBS------############################################################################################################################################
 
 # this will create a row in crypto order table with status 1(NEW)
-@app.route("/create/order/",methods=["POST"])   
-def createLimitOrder():
+@app.route("/create/order",methods=["POST"])   
+def createOrder():
     request_data = request.get_json()
+    order = None
     try:
         order = createCryptoOrder(
-            clientid=200010,
             price=request_data.get("price"),
-            amount=request_data.get("amount"),
-            status=request_data.get("status"),
-            ordertype=request_data.get("ordertype"),
-            trantype=request_data.get("ordertype"),
-            coinpair=request_data.get("ordertype"),
+            qty=request_data.get("qty"),
+            status= CryptoOrderStatus.NEW,
+            ordertype=1, # 1 - LIMIT order  0 - Market order
+            trantype= 0 if request_data.get("trantype") == "BUY" else 1, # 0 - buy 1 - sell
+            coinpair=request_data.get("coinpair"),
             exchgid=1,
         )
+        print(f"Order create successfully order - {order}")
     except Exception as e:
         print(str(e))
-    return jsonify({"status":"success","message":order})
+        return jsonify({"status":"error","message":str(e)})
+    return jsonify({"status":"order created successfully","message":order})
 
 
 
-    
+@app.route("/cancel/order/<orderId>",methods=["POST"])
+def cancelOrder(orderId):
+    binanceOrder = None
+    try:
+        order = getBinanceTradeOrder(crypto_order_id=orderId)
+        print(f"Cancel Order -> {order}")
+        binanceOrder = binance.cancel_order(
+            orderId = order[0]['exchgorderid'],
+            symbol = order[0]['coinpair']
+        )
+        orderId = binanceOrder['orderId']
+        binanceOrder['eventType'] = 'httpEvent'
+        binanceOrder['action'] = "CANCELED"
+        partitionId = orderId % partitionCount
+        Kafka.producer.send('trade',binanceOrder,partition = partitionId,key = b"httpEvent")
+    except Exception as e:
+        print(str(e))
+    return jsonify({"status":"order cancelled successfully","message":binanceOrder})
 
-    
+
+#This will take order from cryptoorders and place order in binance and make the order as processed
+@app.route("/process/order",methods=["GET"])
+def process_order():
+    result = []
+    try:
+        activeOrders = getActiveOrders(status=1)
+        for order in activeOrders:
+            binanceOrder = binance.create_order(
+                symbol=order['coinpair'],
+                side = "BUY" if order['trantype'] == 0 else "SELL",
+                type = "LIMIT",
+                timeInForce = "GTC",
+                quantity = order['qty'],
+                price = order['price']
+            )            
+            createBinanceTradeOrder(
+                clientid = binanceOrder['clientOrderId'],
+                price = binanceOrder['price'], 
+                qty = binanceOrder['origQty'], 
+                status = BinanceTradeOrderStatus.FULLY_FILLED if binanceOrder['status'] == "FILLED" else BinanceTradeOrderStatus.ORDER_PLACED, 
+                ordertype = 1 if binanceOrder['type'] == "LIMIT" else 0, 
+                trantype = 0 if binanceOrder['side'] == "BUY" else 1, 
+                coinpair = binanceOrder['symbol'], 
+                exchgid = 1, 
+                exchgorderid = binanceOrder['orderId'], 
+                trandata = str(binanceOrder['fills']),
+                crypto_order_id = order['id']
+            )
+            updateCryptoOrder(
+                id = order['id'],
+                status = CryptoOrderStatus.PROCESSED
+            )
+            orderId = binanceOrder['orderId']
+            partitionId = orderId % partitionCount
+            binanceOrder['eventType'] = 'httpEvent'
+            binanceOrder['action'] = "NEW"
+            print(f"Process orde type - {type(binanceOrder)} Content -> {binanceOrder}")
+            Kafka.producer.send('trade',binanceOrder,partition = partitionId,key = b"httpEvent")
+            print("event produced")
+            if  binanceOrder['status'] == 'PARTIALLY_FILLED':
+                print("PARTIALLY_FILLED")
+            if binanceOrder['status'] == 'FILLED':
+                print("FILLED")
+            result.append(binanceOrder)
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)})
+    return jsonify({"status":"order created successfully","message":result})
+
+
+def watchBinanceCyptoOrders(*argv):
+    try:
+        message = json.loads(list(argv)[1])
+        message = message['data']
+        print(f"Message -> {str(message)}")
+        if message['e']=='outboundAccountPosition':
+           print(str(["watchCyptoOrders", list(argv)]))
+           Kafka.producer.send('trade',message,partition=partitionId,key=b"wsocketEvent")
+        elif message['e']=='executionReport':
+            orderId = message['i']
+            partitionId = orderId % partitionCount
+            message['eventType'] = 'wsocketEvent'
+            message['action'] = message['x']
+            print(f"watchBinanceCyptoOrderstype - {type(message)}")
+            Kafka.producer.send('trade',message,partition=partitionId,key=b"wsocketEvent")
+            print("event produced")
+            if  message['X']=='PARTIALLY_FILLED':
+                print("PARTIALLY_FILLED")
+            if message['X'] == 'FILLED':
+                print("FILLED")
+            print(str(message))
+    except Exception as e:
+        print(str(e))
+        
+
+
+def consumer():
+    print("Consumer Started")
+    while True:
+        consumer = KafkaConsumer(
+            "trade",
+            bootstrap_servers='localhost:29092',
+            group_id = 'trade-group1',
+            auto_offset_reset='latest',
+            auto_commit_interval_ms=1000,
+            value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+        )
+        for message in consumer:
+            print(f"Message - {message.value}   type - {type(message.value)}")
+            print(Fore.GREEN+f"consumer {message.value}"+Fore.RESET)
+            data = message.value
+            if type(data) == str:
+                print("Came here")
+                data = json.loads(data)
+            print(f"Json event type -> {data['eventType']}")
+            if data['eventType'] == "wsocketEvent":
+                orderID = data['i']
+                if data['action'] == "CANCELED":
+                    updateBinanceTradeOrder(exchgorderid=orderID,status = BinanceTradeOrderStatus.CANCELLED_BY_CT,)
+                else:
+                    order = getBinanceTradeOrder(orderId=orderID)
+                    print(Fore.GREEN+f"Order data ws -> {orderID}    order -> {order}"+Fore.RESET)
+                    trandata = json.loads(order[0]['trandata'].replace("\'", "\""))
+                    print(Fore.RED+f"Trandata inside WS -> {type(trandata)}   data -> {trandata}"+Fore.RESET)
+                    print(f"Tran data -> {order[0]['trandata']}")
+                    new_tran_data = {
+                                "price":data['p'],
+                                "qty":data['l'],
+                                "commission":data['n'],
+                                "commissionAsset":data['N'],
+                                "tradeId":data['t']
+                            }
+                    if new_tran_data not in trandata:
+                        print(Fore.RED+"NOT Same trandata"+Fore.RESET)
+                        trandata.append(new_tran_data)
+                    print(Fore.YELLOW+f"New Tran data - {trandata}"+Fore.RESET)
+                    updateBinanceTradeOrder(exchgorderid=orderID,trandata=str(trandata))
+                    
+            elif data['eventType'] == "httpEvent":
+                orderID = data['orderId']
+                if data['action'] == "CANCELED":
+                    updateBinanceTradeOrder(exchgorderid=orderID,status = BinanceTradeOrderStatus.CANCELLED_BY_CT,)
+                else:
+                    order = getBinanceTradeOrder(orderId=orderID) 
+                    print(Fore.GREEN+f"Order data http -> {orderID}   order -> {order}"+Fore.RESET)
+                    # trandata =json.loads(order[0]['trandata'])
+                    # updateBinanceTradeOrder()
+                    print(f"Tran data -> {order[0]['trandata']}")
+                    # print(Fore.RED+f"Tran data -> {trandata}")
+                
+            
+def init_thread(func):
+    t = threading.Thread(target=func)
+    t.start()
+
+binance = None
+
 if __name__ == "__main__":
     # initsocket()
     binance = Binance()
     partitionCount = Kafka.getPartitionCount()
+    init_thread(func=consumer)
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
+
+
+
+# green - consumer events
+# yellow - http event
+# blue - ws event
