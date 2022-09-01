@@ -1120,6 +1120,7 @@ def createOrder():
     return jsonify({"status":"order created successfully","message":order})
 
 
+# this will cancel the order and send the response to kafka producer
 
 @app.route("/cancel/order/<orderId>",methods=["POST"])
 def cancelOrder(orderId):
@@ -1135,6 +1136,7 @@ def cancelOrder(orderId):
         binanceOrder['eventType'] = 'httpEvent'
         binanceOrder['action'] = "CANCELED"
         partitionId = orderId % partitionCount
+        print(Fore.YELLOW+f"Producer cancel order -> {binanceOrder}"+Fore.RESET)
         Kafka.producer.send('trade',binanceOrder,partition = partitionId,key = b"httpEvent")
     except Exception as e:
         print(str(e))
@@ -1177,7 +1179,7 @@ def process_order():
             partitionId = orderId % partitionCount
             binanceOrder['eventType'] = 'httpEvent'
             binanceOrder['action'] = "NEW"
-            print(f"Process orde type - {type(binanceOrder)} Content -> {binanceOrder}")
+            print(Fore.YELLOW+f"Producer process order -> {binanceOrder}"+Fore.RESET)
             Kafka.producer.send('trade',binanceOrder,partition = partitionId,key = b"httpEvent")
             print("event produced")
             if  binanceOrder['status'] == 'PARTIALLY_FILLED':
@@ -1197,7 +1199,7 @@ def watchBinanceCyptoOrders(*argv):
         print(f"Message -> {str(message)}")
         if message['e']=='outboundAccountPosition':
            print(str(["watchCyptoOrders", list(argv)]))
-           Kafka.producer.send('trade',message,partition=partitionId,key=b"wsocketEvent")
+           print(Fore.YELLOW+f"Producer websocker -> {message}"+Fore.RESET)
         elif message['e']=='executionReport':
             orderId = message['i']
             partitionId = orderId % partitionCount
@@ -1242,7 +1244,10 @@ def consumer():
                 else:
                     order = getBinanceTradeOrder(orderId=orderID)
                     print(Fore.GREEN+f"Order data ws -> {orderID}    order -> {order}"+Fore.RESET)
-                    trandata = json.loads(order[0]['trandata'].replace("\'", "\""))
+                    trandata = None
+                    if order[0]['trandata'] is not None:
+                        trandata = json.loads(order[0]['trandata'].replace("\'", "\""))
+                        print(f"Json for trandata -> {trandata}")
                     print(Fore.RED+f"Trandata inside WS -> {type(trandata)}   data -> {trandata}"+Fore.RESET)
                     print(f"Tran data -> {order[0]['trandata']}")
                     new_tran_data = {
@@ -1285,8 +1290,5 @@ if __name__ == "__main__":
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
 
-
-
-# green - consumer events
-# yellow - http event
-# blue - ws event
+# yellow - producer
+# green - consumer
