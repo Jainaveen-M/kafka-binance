@@ -22,8 +22,10 @@ def processOrderConsumer(partitionID=None):
         for message in consumer:
             print(Fore.RED+f"type - {type(message.value)} data -> {message.value}"+Fore.RESET)
             message = json.loads(message.value)
+            orderID = None
             try:
                 if message['action'] == "CREATE_ORDER":
+                    orderID = str(message["id"])
                     print(f"Message from consumer -> {message}")
                     createBinanceTradeOrder(
                         clientorderid = str(message["id"]),
@@ -51,7 +53,7 @@ def processOrderConsumer(partitionID=None):
                     KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
                     print(Fore.GREEN+f"Consumer_process_order - action : CREATE_ORDER - data -> {binanceOrder}"+Fore.RESET)
             except Exception as e:
-                print(f"Unable to process order due to {str(e)}")
+                print(f"Unable to process order {orderID} due to {str(e)}")
                 
             
 def processEventConsumer(partitionID=None):
@@ -65,12 +67,14 @@ def processEventConsumer(partitionID=None):
             auto_commit_interval_ms=1000    
         )
         # consumer.assign([TopicPartition("binance-events", partitionID)])
+        orderID = None
         for message in consumer:
             print(f"type - {type(message.value)} data -> {message.value}")
             message = json.loads(message.value)
             print(Fore.GREEN+f"Order data -> {message}")
             try:
                 if message['eventType'] == "httpEvent":
+                    orderID = message['clientOrderId']
                     if message['action'] == "NEW": 
                         print(Fore.YELLOW+"============================================ NEW ==================================================")
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -130,6 +134,7 @@ def processEventConsumer(partitionID=None):
                             status= BinanceTradeOrderStatus.EXPIRED
                         ) 
                 if  message['eventType'] == "wsocketEvent":
+                    orderID = message['c']
                     if message['X'] == "NEW":
                         print(Fore.YELLOW+"============================================ NEW =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -223,7 +228,7 @@ def processEventConsumer(partitionID=None):
                             status= BinanceTradeOrderStatus.EXPIRED
                         )
             except Exception as e:
-                print(f"Unable to process event due to {str(e)}")         
+                print(f"Unable to process event for order {orderID} due to {str(e)}")         
         
 def init_thread(func):
     t = threading.Thread(target=func)
