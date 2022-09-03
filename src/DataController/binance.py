@@ -3,7 +3,6 @@ from db import Session,engine
 
 
 def createBinanceTradeOrder(
-        id = None,
         clientorderid = None,
         price = None, 
         qty = None, 
@@ -17,7 +16,6 @@ def createBinanceTradeOrder(
     ):
     db_session = Session(bind=engine)
     binanceOrder = BINANCETRADEORDERS(
-        id = id,
         clientorderid = clientorderid,
         price = price, 
         qty = qty, 
@@ -57,7 +55,6 @@ def set_binance_trade_order_obj(
 
 
 def updateBinanceTradeOrder(
-        id=None,
         clientorderid = None,
         price = None, 
         qty = None, 
@@ -68,18 +65,15 @@ def updateBinanceTradeOrder(
         exchgid = None, 
         exchgorderid = None, 
         trandata = None,
-        isClientIdAvailable = False,
 ):
     db_session = Session(bind=engine)
-    if id is not None:
-        order = db_session.query(BINANCETRADEORDERS).filter(BINANCETRADEORDERS.id == id).with_for_update().one()
     
-    if isClientIdAvailable:
+    if clientorderid is not None:
         order = db_session.query(BINANCETRADEORDERS).filter(BINANCETRADEORDERS.clientorderid == clientorderid).with_for_update().one()
-        
-            
+
+                
     set_binance_trade_order_obj(
-        order,
+        order = order,
         clientorderid = clientorderid,
         price = price, 
         qty = qty, 

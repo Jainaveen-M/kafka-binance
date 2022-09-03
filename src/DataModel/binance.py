@@ -9,7 +9,7 @@ Base = declarative_base()
     
 class BINANCETRADEORDERS(Base):
     __tablename__ = 'binancetradeorders'
-    id = Column(String(),unique=True,primary_key=True,autoincrement=True)
+    id = Column(Integer(),unique=True,primary_key=True,autoincrement=True)
     clientorderid = Column(String())
     price = Column(String())
     qty = Column(String())
@@ -43,6 +43,12 @@ class BinanceTradeOrderStatus():
     PARTIALLY_FILLED = 3
     FULLY_FILLED = 4
     CANCELLED_BY_CT = 5
+    PENDING_CANCEL = 6
+    CANCELED = 7
+    REJECTED = 8 
+    TRADE = 9
+    EXPIRED = 10
+    
     
     
     
