@@ -92,23 +92,22 @@ def updateBinanceTradeOrder(
 
 def getBinanceTradeOrder(
     id = None,
-    orderId = None,
+    clientorderid = None,
     status = None,
     db_session = None
 ):
     db_session = Session(bind=engine)
     query = db_session.query(BINANCETRADEORDERS)
-    result = []
+    data = None
     try:
         if id is not None:
-            query = query.filter(BINANCETRADEORDERS.id == id)
-        if orderId is not None:
-            query = query.filter(BINANCETRADEORDERS.exchgorderid == orderId)
+            query = query.filter(BINANCETRADEORDERS.id == id).one()
+        if clientorderid is not None:
+            query = query.filter(BINANCETRADEORDERS.clientorderid == clientorderid).one()
         if status is not None:
-            query = query.filter(BINANCETRADEORDERS.status == status)
-        data = query.all()
-        for order in data:
-            result.append(order.as_dict())
+            query = query.filter(BINANCETRADEORDERS.status == status).one()
+        data = query.as_dict()
+        print(f"Order Data from query {data}")
     except Exception as e:
         print(str(e))
-    return result
+    return data

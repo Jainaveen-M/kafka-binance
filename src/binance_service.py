@@ -222,11 +222,12 @@ def createOrder():
 def cancelOrder(orderId):
     binanceOrder = None
     try:
-        order = getBinanceTradeOrder(crypto_order_id=orderId)
+        order = getBinanceTradeOrder(id=orderId)
         print(f"Cancel Order -> {order}")
         binanceOrder = binance.cancel_order(
-            orderId = order[0]['exchgorderid'],
-            symbol = order[0]['coinpair']
+            orderId = order['exchgorderid'],
+            symbol = order['coinpair'],
+            origClientOrderId = order['clientorderid']
         )
         orderId = binanceOrder['orderId']
         binanceOrder['eventType'] = 'httpEvent'

@@ -34,7 +34,6 @@ class BINANCETRADEORDERS(Base):
             "exchgid" : self.exchgid, 
             "exchgorderid" : self.exchgorderid, 
             "trandata" : self.trandata,
-            "crypto_order_id": self.crypto_order_id
         }
     
 class BinanceTradeOrderStatus():
