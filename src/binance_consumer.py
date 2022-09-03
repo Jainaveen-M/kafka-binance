@@ -115,9 +115,15 @@ def processEventConsumer(partitionID=None):
                     if message['status'] == "CANCELED":
                         print(Fore.YELLOW+"============================================ CANCELED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        order = getBinanceTradeOrder(clientorderid=message['c'])
+                        status = None
+                        if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
+                        else:
+                            status = BinanceTradeOrderStatus.CANCELED
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
-                            status= BinanceTradeOrderStatus.CANCELED
+                            status = status
                         )                         
                     if message['status'] == "REJECTED":
                         print(Fore.YELLOW+"============================================ REJECTED =================================================="+Fore.RESET)
@@ -209,9 +215,18 @@ def processEventConsumer(partitionID=None):
                     if message['X'] == "CANCELED":
                         print(Fore.YELLOW+"============================================ CANCELED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        status = None
+                        if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
+                        else:
+                            status = BinanceTradeOrderStatus.CANCELED
+                        updateBinanceTradeOrder(
+                            clientorderid = message['clientOrderId'],
+                            status = status
+                        )
                         updateBinanceTradeOrder(
                             clientorderid = message['C'],
-                            status= BinanceTradeOrderStatus.CANCELED
+                            status = status
                         )    
                     if message['X'] == "REJECTED":
                         print(Fore.YELLOW+"============================================ REJECTED =================================================="+Fore.RESET)

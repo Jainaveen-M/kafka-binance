@@ -37,20 +37,13 @@ class BINANCETRADEORDERS(Base):
         }
     
 class BinanceTradeOrderStatus():
-    NEW = 1
-    ORDER_PLACED = 2
-    PARTIALLY_FILLED = 3
-    FULLY_FILLED = 4
-    CANCELLED_BY_CT = 5
-    PENDING_CANCEL = 6
-    CANCELED = 7
-    REJECTED = 8 
-    TRADE = 9
-    EXPIRED = 10
-    
-    
-    
-    
-    
-    
+    NEW = 0
+    ORDER_PLACED = 1
+    PARTIALLY_FILLED = 2
+    FULLY_FILLED = 3
+    PENDING_CANCEL = 4
+    CANCELED = 5
+    PARTIALLY_FILLED_AND_CACELED = 6
+    REJECTED = 7
+    EXPIRED = 8
     

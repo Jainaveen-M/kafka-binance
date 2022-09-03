@@ -239,56 +239,6 @@ def cancelOrder(orderId):
         print(str(e))
     return jsonify({"status":"order cancelled successfully","message":binanceOrder})
 
-
-#This will take order from cryptoorders and place order in binance and make the order as processed
-# @app.route("/process/order",methods=["GET"])
-# def process_order():
-#     result = []
-#     try:
-        # activeOrders = getActiveOrders(status=1)
-        # for order in activeOrders:
-        #     binanceOrder = binance.create_order(
-        #         symbol=order['coinpair'],
-        #         side = "BUY" if order['trantype'] == 0 else "SELL",
-        #         type = "LIMIT",
-        #         timeInForce = "GTC",
-        #         quantity = order['qty'],
-        #         price = order['price']
-        #     )            
-        #     createBinanceTradeOrder(
-        #         clientid = binanceOrder['clientOrderId'],
-        #         price = binanceOrder['price'], 
-        #         qty = binanceOrder['origQty'], 
-        #         status = BinanceTradeOrderStatus.FULLY_FILLED if binanceOrder['status'] == "FILLED" else BinanceTradeOrderStatus.ORDER_PLACED, 
-        #         ordertype = 1 if binanceOrder['type'] == "LIMIT" else 0, 
-        #         trantype = 0 if binanceOrder['side'] == "BUY" else 1, 
-        #         coinpair = binanceOrder['symbol'], 
-        #         exchgid = 1, 
-        #         exchgorderid = binanceOrder['orderId'], 
-        #         trandata = json.dumps(binanceOrder['fills']),
-        #         crypto_order_id = order['id']
-        #     )
-        #     updateCryptoOrder(
-        #         id = order['id'],
-        #         status = CryptoOrderStatus.PROCESSED
-        #     )
-        #     orderId = binanceOrder['orderId']
-        #     partitionId = orderId % partitionCount
-        #     binanceOrder['eventType'] = 'httpEvent'
-        #     binanceOrder['action'] = "NEW"
-        #     print(Fore.YELLOW+f"Producer process order -> {binanceOrder}"+Fore.RESET)
-        #     Kafka.producer.send('binance-orders',binanceOrder,partition = partitionId,key = b"httpEvent")
-        #     print("event produced")
-        #     if  binanceOrder['status'] == 'PARTIALLY_FILLED':
-        #         print("PARTIALLY_FILLED")
-        #     if binanceOrder['status'] == 'FILLED':
-        #         print("FILLED")
-        #     result.append(binanceOrder)
-    # except Exception as e:
-    #     return jsonify({"status":"error","message":str(e)})
-    # return jsonify({"status":"order created successfully","message":result})
-
-
 def watchBinanceCyptoOrders(*argv):
     try:
         message = json.loads(list(argv)[1])
