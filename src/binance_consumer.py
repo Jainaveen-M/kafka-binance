@@ -121,18 +121,7 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
                             status= BinanceTradeOrderStatus.REJECTED
-                        ) 
-                    if message['status'] == "TRADE":
-                        print(Fore.YELLOW+"============================================ TRADE =================================================="+Fore.RESET)
-                        print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
-                        trandata = {
-                            "executions":message['fills']
-                        }
-                        updateBinanceTradeOrder(
-                            clientorderid = message['clientOrderId'],
-                            trandata= json.dumps(trandata),
-                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED
-                        )               
+                        )             
                     if message['status'] == 'EXPIRED':
                         print(Fore.YELLOW+"============================================ EXPIRED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -152,6 +141,7 @@ def processEventConsumer(partitionID=None):
                     if message['X'] == 'PARTIALLY_FILLED':
                         print(Fore.YELLOW+"============================================ PARTIALLY_FILLED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        trandata = None
                         new_trandata = {
                                     "price":message['p'],
                                     "qty":message['l'],
@@ -162,13 +152,21 @@ def processEventConsumer(partitionID=None):
                         order = getBinanceTradeOrder(clientorderid=message['c'])
                         if order['trandata'] is not None:
                             trandata = json.loads(order['trandata'])
-                            trandata['executions'].append(new_trandata)
-                            print(f"Trandata -> {trandata}")
-                            updateBinanceTradeOrder(
-                                clientorderid = message['c'],
-                                trandata= json.dumps(trandata),
-                                status= BinanceTradeOrderStatus.PARTIALLY_FILLED
-                            ) 
+                            if new_trandata not in trandata['executions']:
+                                trandata['executions'].append(new_trandata)
+                           
+                        else:
+                            trandata = {
+                                "executions": [
+                                    new_trandata
+                                ]
+                            }
+                        print(f"Trandata -> {trandata}")
+                        updateBinanceTradeOrder(
+                            clientorderid = message['c'],
+                            trandata= json.dumps(trandata),
+                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED
+                        ) 
                     if message['X'] == 'FILLED':
                         print(Fore.YELLOW+"============================================ FILLED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -182,13 +180,20 @@ def processEventConsumer(partitionID=None):
                         order = getBinanceTradeOrder(clientorderid=message['c'])
                         if order['trandata'] is not None:
                             trandata = json.loads(order['trandata'])
-                            trandata['executions'].append(new_trandata)
-                            print(f"Trandata -> {trandata}")
-                            updateBinanceTradeOrder(
-                                clientorderid = message['c'],
-                                trandata= json.dumps(trandata),
-                                status= BinanceTradeOrderStatus.FULLY_FILLED
-                            ) 
+                            if new_trandata not in trandata['executions']:
+                                trandata['executions'].append(new_trandata)
+                        else:
+                            trandata = {
+                                "executions": [
+                                    new_trandata
+                                ]
+                            }
+                        print(f"Trandata -> {trandata}")
+                        updateBinanceTradeOrder(
+                            clientorderid = message['c'],
+                            trandata= json.dumps(trandata),
+                            status= BinanceTradeOrderStatus.FULLY_FILLED
+                        ) 
                     if message['X'] == 'PENDING_CANCEL':
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -209,13 +214,6 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
                             status= BinanceTradeOrderStatus.REJECTED
-                        )
-                    if message['X'] == "TRADE":
-                        print(Fore.YELLOW+"============================================ TRADE =================================================="+Fore.RESET)
-                        print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
-                        updateBinanceTradeOrder(
-                            clientorderid = message['c'],
-                            status= BinanceTradeOrderStatus.TRADE
                         )
                     if message['X'] == 'EXPIRED':
                         print(Fore.YELLOW+"============================================ EXPIRED =================================================="+Fore.RESET)
