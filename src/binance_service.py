@@ -232,24 +232,23 @@ def createOrder():
 
 @app.route("/cancel/order/<orderId>",methods=["POST"])
 def cancelOrder(orderId):
-    binanceOrder = None
+    orderData = None
     try:
         order = getBinanceTradeOrder(id=orderId)
         print(f"Cancel Order -> {order}")
-        binanceOrder = binance.cancel_order(
-            orderId = order['exchgorderid'],
-            symbol = order['coinpair'],
-            origClientOrderId = order['clientorderid']
-        )
-        orderId = binanceOrder['orderId']
-        binanceOrder['eventType'] = 'httpEvent'
-        binanceOrder['action'] = "CANCELED"
-        partitionId = orderId % partitionCount
-        print(Fore.YELLOW+f"Producer cancel order -> {binanceOrder}"+Fore.RESET)
-        KafkaHelper.producer.send('binance-orders',binanceOrder,partition = partitionId,key = b"httpEvent")
+        orderData = {
+            "orderId": order['exchgorderid'],
+            "coinpair": order['coinpair'],
+            "clientorderid": order['clientorderid'],
+            "eventType":"httpEvent",
+            "action":"CANCEL_ORDER"
+        }
+        print(Fore.YELLOW+f"Producer cancel order -> {orderData}"+Fore.RESET)
+        KafkaHelper.producer.send('binance-orders',orderData,key = b"httpEvent")
     except Exception as e:
         print(str(e))
-    return jsonify({"status":"order cancelled successfully","message":binanceOrder})
+        return jsonify({"status":"error","message":str(e)})
+    return jsonify({"status":"order cancelled successfully","message":orderData})
 
 def watchBinanceCyptoOrders(*argv):
     try:

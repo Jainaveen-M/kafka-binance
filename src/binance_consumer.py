@@ -22,10 +22,10 @@ def processOrderConsumer(partitionID=None):
         for message in consumer:
             print(Fore.RED+f"type - {type(message.value)} data -> {message.value}"+Fore.RESET)
             message = json.loads(message.value)
+            binanceOrder = None,
             orderID = None
             try:
                 if message['action'] == "CREATE_ORDER":
-                    orderID = str(message["id"])
                     print(f"Message from consumer -> {message}")
                     createBinanceTradeOrder(
                         clientorderid = str(message["id"]),
@@ -52,6 +52,19 @@ def processOrderConsumer(partitionID=None):
                     partitionId = orderID % partitionCount
                     KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
                     print(Fore.GREEN+f"Consumer_process_order - action : CREATE_ORDER - data -> {binanceOrder}"+Fore.RESET)
+                if message['action'] == "CANCEL_ORDER":
+                    print(f"Message from consumer -> {message}")
+                    binanceOrder = binance.cancel_order(
+                        orderId =  message['orderId'],
+                        symbol = message['coinpair'],
+                        origClientOrderId = message['clientorderid']
+                    )
+                    binanceOrder['eventType'] = 'httpEvent'
+                    binanceOrder['action'] = binanceOrder['status']
+                    orderID = binanceOrder['orderId']
+                    partitionId = orderID % partitionCount
+                    KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
+                    print(Fore.GREEN+f"Consumer_process_order - action : CANCEL_ORDER - data -> {binanceOrder}"+Fore.RESET)
             except Exception as e:
                 print(f"Unable to process order {orderID} due to {str(e)}")
                 
@@ -117,7 +130,7 @@ def processEventConsumer(partitionID=None):
                     if message['status'] == "CANCELED":
                         print(Fore.YELLOW+"============================================ CANCELED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
-                        order = getBinanceTradeOrder(clientorderid=message['c'])
+                        order = getBinanceTradeOrder(clientorderid=message['clientorderid'])
                         status = None
                         if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
                             status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
@@ -220,6 +233,7 @@ def processEventConsumer(partitionID=None):
                     if message['X'] == "CANCELED":
                         print(Fore.YELLOW+"============================================ CANCELED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        order = getBinanceTradeOrder(clientorderid=message['C'])
                         status = None
                         if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
                             status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
