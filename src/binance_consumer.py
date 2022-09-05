@@ -92,6 +92,7 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
                             trandata= json.dumps(trandata),
+                            exchgorderid = message['orderId'],
                             status= BinanceTradeOrderStatus.PARTIALLY_FILLED
                         ) 
                     if message['status'] == 'FILLED':
@@ -103,6 +104,7 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
                             trandata= json.dumps(trandata),
+                            exchgorderid = message['orderId'],
                             status= BinanceTradeOrderStatus.FULLY_FILLED
                         ) 
                     if message['status'] == 'PENDING_CANCEL':
@@ -176,6 +178,7 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
                             trandata= json.dumps(trandata),
+                            exchgorderid = message['i'],
                             status= BinanceTradeOrderStatus.PARTIALLY_FILLED
                         ) 
                     if message['X'] == 'FILLED':
@@ -203,6 +206,7 @@ def processEventConsumer(partitionID=None):
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
                             trandata= json.dumps(trandata),
+                            exchgorderid = message['i'],
                             status= BinanceTradeOrderStatus.FULLY_FILLED
                         ) 
                     if message['X'] == 'PENDING_CANCEL':
@@ -210,6 +214,7 @@ def processEventConsumer(partitionID=None):
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
+                            exchgorderid = message['i'],
                             status= BinanceTradeOrderStatus.PENDING_CANCEL
                         ) 
                     if message['X'] == "CANCELED":
@@ -220,10 +225,6 @@ def processEventConsumer(partitionID=None):
                             status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
                         else:
                             status = BinanceTradeOrderStatus.CANCELED
-                        updateBinanceTradeOrder(
-                            clientorderid = message['clientOrderId'],
-                            status = status
-                        )
                         updateBinanceTradeOrder(
                             clientorderid = message['C'],
                             status = status

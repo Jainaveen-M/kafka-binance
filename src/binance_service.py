@@ -128,7 +128,19 @@ def deleteAllOpenOrder():
     result = binance.cancel_all_open_orders(symbol=request_data['symbol'])
     return jsonify({"status":"success","message":result})
     
-    
+@app.route("/order/<orderId>",methods=["GET"])
+def getOrderDetails(orderId):
+    binanceOrder = None
+    try:
+        order = getBinanceTradeOrder(id=orderId)
+        print(f"Order Details -> {order}")
+        binanceOrder = binance.get_order(
+            symbol = order['coinpair'],
+            orderId = order['exchgorderid']
+        )
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)})
+    return jsonify({"status":"order cancelled successfully","message":binanceOrder})
 
 # need to be moved
 def cryptoOrderBookRefresh(*argv):

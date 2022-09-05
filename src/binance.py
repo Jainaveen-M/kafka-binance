@@ -862,3 +862,42 @@ class Binance:
 
     def cancel_all_open_orders(self, **params):
         return self._delete('openOrders', True, data=params)
+
+    def get_order(self, **params):
+            """Check an order's status. Either orderId or origClientOrderId must be sent.
+
+            https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#query-order-user_data
+
+            :param symbol: required
+            :type symbol: str
+            :param orderId: The unique order id
+            :type orderId: int
+            :param origClientOrderId: optional
+            :type origClientOrderId: str
+            :param recvWindow: the number of milliseconds the request is valid for
+            :type recvWindow: int
+
+            :returns: API response
+
+            .. code-block:: python
+
+                {
+                    "symbol": "LTCBTC",
+                    "orderId": 1,
+                    "clientOrderId": "myOrder1",
+                    "price": "0.1",
+                    "origQty": "1.0",
+                    "executedQty": "0.0",
+                    "status": "NEW",
+                    "timeInForce": "GTC",
+                    "type": "LIMIT",
+                    "side": "BUY",
+                    "stopPrice": "0.0",
+                    "icebergQty": "0.0",
+                    "time": 1499827319559
+                }
+
+            :raises: BinanceRequestException, BinanceAPIException
+
+            """
+            return self._get('order', True, data=params)
