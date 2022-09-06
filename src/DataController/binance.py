@@ -3,6 +3,7 @@ from db import Session,engine
 
 
 def createBinanceTradeOrder(
+        ctid = None,
         clientorderid = None,
         price = None, 
         qty = None, 
@@ -16,6 +17,7 @@ def createBinanceTradeOrder(
     ):
     db_session = Session(bind=engine)
     binanceOrder = BINANCETRADEORDERS(
+        ctid = ctid,
         clientorderid = clientorderid,
         price = price, 
         qty = qty, 
@@ -94,6 +96,7 @@ def getBinanceTradeOrder(
     id = None,
     clientorderid = None,
     status = None,
+    ctid = None,
     db_session = None
 ):
     db_session = Session(bind=engine)
@@ -106,6 +109,8 @@ def getBinanceTradeOrder(
             query = query.filter(BINANCETRADEORDERS.clientorderid == clientorderid).one()
         if status is not None:
             query = query.filter(BINANCETRADEORDERS.status == status).one()
+        if ctid is not None:
+            query = query.filter(BINANCETRADEORDERS.ctid == ctid).one()
         data = query.as_dict()
         print(f"Order Data from query {data}")
     except Exception as e:

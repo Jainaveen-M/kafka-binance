@@ -10,6 +10,7 @@ Base = declarative_base()
 class BINANCETRADEORDERS(Base):
     __tablename__ = 'binancetradeorders'
     id = Column(Integer(),unique=True,primary_key=True,autoincrement=True)
+    ctid = Column(Integer())
     clientorderid = Column(String())
     price = Column(String())
     qty = Column(String())
@@ -24,6 +25,7 @@ class BINANCETRADEORDERS(Base):
     def as_dict(self):
         return {
             "id":self.id,
+            "ctid":self.ctid,
             "clientorderid": self.clientorderid,
             "price": self.price, 
             "qty": self.qty, 

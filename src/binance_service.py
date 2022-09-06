@@ -210,6 +210,7 @@ def createOrder():
         orderID = uuid.uuid4()
         order = {
             "id":str(orderID),
+            "ctid":request_data.get("ctid"),
             "price":request_data.get("price"),
             "qty":request_data.get("qty"),
             "status": BinanceTradeOrderStatus.NEW,

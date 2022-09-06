@@ -28,6 +28,7 @@ def processOrderConsumer(partitionID=None):
                 if message['action'] == "CREATE_ORDER":
                     print(f"Message from consumer -> {message}")
                     createBinanceTradeOrder(
+                        ctid = message['ctid'],
                         clientorderid = str(message["id"]),
                         price = message['price'], 
                         qty = message['qty'], 
@@ -125,7 +126,7 @@ def processEventConsumer(partitionID=None):
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         updateBinanceTradeOrder(
-                            clientorderid = message['clientOrderId'],
+                            clientorderid = message['origClientOrderId'],
                             status= BinanceTradeOrderStatus.PENDING_CANCEL
                         ) 
                     if message['status'] == "CANCELED":
@@ -233,7 +234,7 @@ def processEventConsumer(partitionID=None):
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         updateBinanceTradeOrder(
-                            clientorderid = message['c'],
+                            clientorderid = message['C'],
                             exchgorderid = message['i'],
                             status= BinanceTradeOrderStatus.PENDING_CANCEL
                         ) 
