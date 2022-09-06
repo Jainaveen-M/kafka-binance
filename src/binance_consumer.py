@@ -16,27 +16,44 @@ def processRequestConsumer(partitionID=None):
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-requests-group",
-            auto_commit_interval_ms=1000
         )
         consumer.assign([TopicPartition("binance-requests", partitionID)])
         for message in consumer:
             #do the wallet validation here
-            message = json.loads(message.value)
-            print(f"type - {type(message)} data -> {message}")
-            KafkaHelper.producer.send('binance-orders',message,key = b"httpEvent")    
+            try:
+                message = json.loads(message.value)
+                print(f"type - {type(message)} data -> {message}")
+                if message['ctid'] == 100:
+                    # if verification failed
+                    createBinanceTradeOrder(
+                            ctid = message['ctid'],
+                            clientorderid = str(message["id"]),
+                            price = message['price'], 
+                            qty = message['qty'], 
+                            status = BinanceTradeOrderStatus.REJECTED, 
+                            ordertype = message['ordertype'],
+                            trantype =  message['trantype'],
+                            coinpair = message['coinpair'], 
+                            exchgid = 1
+                        )
+                else:
+                    partitionId =int(message['id']) % partitionCount
+                    KafkaHelper.producer.send('binance-orders',message,partition=partitionId,key = b"httpEvent")
+                consumer.commit()
+            except Exception as e:
+                print(str(e))
+                
     
 
 def processOrderConsumer(partitionID=None):
     print(f"Process Order Consumer Started for partitionID - {partitionID}")
     while True:
         consumer = KafkaConsumer(
-            "binance-orders",
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-orders-group",
-            auto_commit_interval_ms=1000
         )
-        # consumer.assign([TopicPartition("binance-orders", partitionID)])
+        consumer.assign([TopicPartition("binance-orders", partitionID)])
         for message in consumer:
             print(Fore.RED+f"type - {type(message.value)} data -> {message.value}"+Fore.RESET)
             message = json.loads(message.value)
@@ -68,9 +85,10 @@ def processOrderConsumer(partitionID=None):
                     binanceOrder['eventType'] = 'httpEvent'
                     binanceOrder['action'] = binanceOrder['status']
                     orderID = binanceOrder['orderId']
-                    partitionId = orderID % partitionCount
+                    partitionId = int(message['id']) % partitionCount
                     KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
                     print(Fore.GREEN+f"Consumer_process_order - action : CREATE_ORDER - data -> {binanceOrder}"+Fore.RESET)
+                    
                 if message['action'] == "CANCEL_ORDER":
                     print(f"Message from consumer -> {message}")
                     binanceOrder = binance.cancel_order(
@@ -81,9 +99,10 @@ def processOrderConsumer(partitionID=None):
                     binanceOrder['eventType'] = 'httpEvent'
                     binanceOrder['action'] = binanceOrder['status']
                     orderID = binanceOrder['orderId']
-                    partitionId = orderID % partitionCount
+                    partitionId = int(message['id']) % partitionCount
                     KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
                     print(Fore.GREEN+f"Consumer_process_order - action : CANCEL_ORDER - data -> {binanceOrder}"+Fore.RESET)
+                consumer.commit()
             except Exception as e:
                 print(f"Unable to process order {orderID} due to {str(e)}")
                 
@@ -92,13 +111,11 @@ def processEventConsumer(partitionID=None):
     print(f"Process Event Consumer Started for partitionID - {partitionID}")
     while True:
         consumer = KafkaConsumer(
-            "binance-events",
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-events-group",
-            auto_commit_interval_ms=1000    
         )
-        # consumer.assign([TopicPartition("binance-events", partitionID)])
+        consumer.assign([TopicPartition("binance-events", partitionID)])
         orderID = None
         for message in consumer:
             print(f"type - {type(message.value)} data -> {message.value}")
@@ -289,6 +306,7 @@ def processEventConsumer(partitionID=None):
                             clientorderid = message['c'],
                             status= BinanceTradeOrderStatus.EXPIRED
                         )
+                consumer.commit()
             except Exception as e:
                 msg = errorMsg if errorMsg else str(e)
                 print(f"Unable to process event for order {orderID} due to {msg}")         

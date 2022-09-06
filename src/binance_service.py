@@ -207,9 +207,10 @@ def createOrder():
     request_data = request.get_json()
     order = None
     try:
-        orderID = uuid.uuid4()
+        id = str(uuid.uuid4().int)
+        orderID = id[:16]
         order = {
-            "id":str(orderID),
+            "id":orderID,
             "ctid":request_data.get("ctid"),
             "price":request_data.get("price"),
             "qty":request_data.get("qty"),
