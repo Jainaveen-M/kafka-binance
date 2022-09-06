@@ -221,7 +221,9 @@ def createOrder():
             "event":"httpEvent",
             "action":"CREATE_ORDER"
         }
-        KafkaHelper.producer.send('binance-orders',order,key = b"httpEvent")
+        partitionId = int(request_data.get("ctid")) % partitionCount
+        # KafkaHelper.producer.send('binance-orders',order,key = b"httpEvent")
+        KafkaHelper.producer.send('binance-requests',order,partition=partitionId,key = b"httpEvent")
         print(f"Order create successfully order - {order}")
     except Exception as e:
         print(str(e))
@@ -246,7 +248,9 @@ def cancelOrder(orderId):
             "action":"CANCEL_ORDER"
         }
         print(Fore.YELLOW+f"Producer cancel order -> {orderData}"+Fore.RESET)
-        KafkaHelper.producer.send('binance-orders',orderData,key = b"httpEvent")
+        #KafkaHelper.producer.send('binance-orders',orderData,key = b"httpEvent")
+        partitionId = int(order['ctid']) % partitionCount
+        KafkaHelper.producer.send('binance-requests',order,partition=partitionId,key = b"httpEvent")
     except Exception as e:
         print(str(e))
         return jsonify({"status":"error","message":str(e)})

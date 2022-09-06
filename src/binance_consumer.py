@@ -8,6 +8,24 @@ from colorama import Fore
 
 from binance import Binance
 
+
+def processRequestConsumer(partitionID=None):
+    print(f"Process Request Consumer Started for partitionID - {partitionID}")
+    while True:
+        consumer = KafkaConsumer(
+            bootstrap_servers='localhost:29092',
+            auto_offset_reset='latest',
+            group_id = "binance-requests-group",
+            auto_commit_interval_ms=1000
+        )
+        consumer.assign([TopicPartition("binance-requests", partitionID)])
+        for message in consumer:
+            #do the wallet validation here
+            message = json.loads(message.value)
+            print(f"type - {type(message)} data -> {message}")
+            KafkaHelper.producer.send('binance-orders',message,key = b"httpEvent")    
+    
+
 def processOrderConsumer(partitionID=None):
     print(f"Process Order Consumer Started for partitionID - {partitionID}")
     while True:
@@ -275,8 +293,14 @@ def processEventConsumer(partitionID=None):
                 msg = errorMsg if errorMsg else str(e)
                 print(f"Unable to process event for order {orderID} due to {msg}")         
         
-def init_thread(func):
-    t = threading.Thread(target=func)
+# def init_thread(func):
+#     t = threading.Thread(target=func)
+#     t.start()
+    
+def init_thread(func, args=None):
+    if args is None:
+        args = ()
+    t = threading.Thread(target=func, args=args)
     t.start()
 
 binance = None
@@ -289,9 +313,18 @@ id = uuid.uuid1()
 if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
-    init_thread(func=processOrderConsumer)
-    # init_thread(func=processOrderConsumer)
-    # init_thread(func=processOrderConsumer)
-    init_thread(func=processEventConsumer)
-    # init_thread(func=processEventConsumer)
-    # init_thread(func=processEventConsumer)
+    
+    #request queue
+    init_thread(func=processRequestConsumer,args=(0,))
+    init_thread(func=processRequestConsumer,args=(1,))
+    init_thread(func=processRequestConsumer,args=(2,))
+    
+    # order queue
+    init_thread(func=processOrderConsumer,args=(0,))
+    init_thread(func=processOrderConsumer,args=(1,))
+    init_thread(func=processOrderConsumer,args=(2,))
+    
+    #event queue
+    init_thread(func=processEventConsumer,args=(0,))
+    init_thread(func=processEventConsumer,args=(1,))
+    init_thread(func=processEventConsumer,args=(2,))
