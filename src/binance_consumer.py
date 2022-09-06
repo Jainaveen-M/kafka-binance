@@ -85,6 +85,7 @@ def processEventConsumer(partitionID=None):
             print(f"type - {type(message.value)} data -> {message.value}")
             message = json.loads(message.value)
             print(Fore.GREEN+f"Order data -> {message}")
+            errorMsg = None
             try:
                 if message['eventType'] == "httpEvent":
                     orderID = message['clientOrderId']
@@ -130,14 +131,20 @@ def processEventConsumer(partitionID=None):
                     if message['status'] == "CANCELED":
                         print(Fore.YELLOW+"============================================ CANCELED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
-                        order = getBinanceTradeOrder(clientorderid=message['clientorderid'])
+                        order = getBinanceTradeOrder(clientorderid=message['origClientOrderId'])
                         status = None
-                        if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
-                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
+                        orderID = message['origClientOrderId']
+                        if order['status'] in [BinanceTradeOrderStatus.NEW,BinanceTradeOrderStatus.ORDER_PLACED,BinanceTradeOrderStatus.PARTIALLY_FILLED,BinanceTradeOrderStatus.PENDING_CANCEL]:
+                           status = BinanceTradeOrderStatus.CANCELED
+                        elif order['status'] == BinanceTradeOrderStatus.CANCELED:
+                            errorMsg = "Order closed by WEBSOCKET Event"
+                            print(errorMsg)
+                            raise Exception(errorMsg)
                         else:
-                            status = BinanceTradeOrderStatus.CANCELED
+                            errorMsg = "Unable to cancel the order due to invalid status"
+                            raise Exception(errorMsg)
                         updateBinanceTradeOrder(
-                            clientorderid = message['clientOrderId'],
+                            clientorderid = message['origClientOrderId'],
                             status = status
                         )                         
                     if message['status'] == "REJECTED":
@@ -235,10 +242,16 @@ def processEventConsumer(partitionID=None):
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         order = getBinanceTradeOrder(clientorderid=message['C'])
                         status = None
-                        if order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
-                            status= BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CACELED
+                        orderID = message['C']
+                        if order['status'] in [BinanceTradeOrderStatus.NEW,BinanceTradeOrderStatus.ORDER_PLACED,BinanceTradeOrderStatus.PARTIALLY_FILLED,BinanceTradeOrderStatus.PENDING_CANCEL]:
+                               status = BinanceTradeOrderStatus.CANCELED
+                        elif order['status'] == BinanceTradeOrderStatus.CANCELED:
+                            errorMsg = "Order closed by HTTP Event"
+                            print(errorMsg)
+                            raise Exception(errorMsg)
                         else:
-                            status = BinanceTradeOrderStatus.CANCELED
+                            errorMsg = "Unable to cancel the order due to invalid status"
+                            raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['C'],
                             status = status
@@ -258,7 +271,8 @@ def processEventConsumer(partitionID=None):
                             status= BinanceTradeOrderStatus.EXPIRED
                         )
             except Exception as e:
-                print(f"Unable to process event for order {orderID} due to {str(e)}")         
+                msg = errorMsg if errorMsg else str(e)
+                print(f"Unable to process event for order {orderID} due to {msg}")         
         
 def init_thread(func):
     t = threading.Thread(target=func)

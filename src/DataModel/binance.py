@@ -43,7 +43,6 @@ class BinanceTradeOrderStatus():
     FULLY_FILLED = 3
     PENDING_CANCEL = 4
     CANCELED = 5
-    PARTIALLY_FILLED_AND_CACELED = 6
-    REJECTED = 7
-    EXPIRED = 8
+    REJECTED = 6
+    EXPIRED = 7
     

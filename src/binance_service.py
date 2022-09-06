@@ -236,6 +236,7 @@ def cancelOrder(orderId):
     try:
         order = getBinanceTradeOrder(id=orderId)
         print(f"Cancel Order -> {order}")
+        #validate req here
         orderData = {
             "orderId": order['exchgorderid'],
             "coinpair": order['coinpair'],
