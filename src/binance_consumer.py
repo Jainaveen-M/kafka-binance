@@ -16,10 +16,12 @@ def processRequestConsumer(partitionID=None):
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-requests-group",
+            enable_auto_commit= False
         )
         consumer.assign([TopicPartition("binance-requests", partitionID)])
         for message in consumer:
             #do the wallet validation here
+            #insert here in db
             try:
                 message = json.loads(message.value)
                 print(f"type - {type(message)} data -> {message}")
@@ -52,6 +54,7 @@ def processOrderConsumer(partitionID=None):
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-orders-group",
+            enable_auto_commit= False
         )
         consumer.assign([TopicPartition("binance-orders", partitionID)])
         for message in consumer:
@@ -114,6 +117,7 @@ def processEventConsumer(partitionID=None):
             bootstrap_servers='localhost:29092',
             auto_offset_reset='latest',
             group_id = "binance-events-group",
+            enable_auto_commit= False
         )
         consumer.assign([TopicPartition("binance-events", partitionID)])
         orderID = None
