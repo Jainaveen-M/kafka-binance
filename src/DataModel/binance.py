@@ -47,4 +47,38 @@ class BinanceTradeOrderStatus():
     CANCELED = 5
     REJECTED = 6
     EXPIRED = 7
-    
+
+
+
+class TRADEORDERVERIFIED(Base):
+    __tablename__ = 'tradeordersverified'
+    id = Column(Integer(),unique=True,primary_key=True,autoincrement=True)
+    orderid = Column(Integer())
+    clientid = Column(Integer())
+    price = Column(Integer())
+    amount = Column(Integer())
+    coinpair = Column(String())
+    status = Column(Integer())
+    ordertype = Column(Integer())
+    trantype = Column(Integer())
+    exchgid = Column(Integer())
+
+    def as_dict(self):
+        return {
+            "id":self.id,
+            "orderid":self.orderid,
+            "clientid":self.clientid,
+            "price": str(self.price), 
+            "amount": str(self.amount), 
+            "coinpair": self.coinpair, 
+            "status": self.status, 
+            "ordertype" : self.ordertype, 
+            "trantype" : self.trantype, 
+            "exchgid" : self.exchgid,
+        }    
+      
+      
+class TradeOrderVerifiedStatus():
+    VERIFIED = 1
+    PROCESSED = 2
+    REJECTED = 3

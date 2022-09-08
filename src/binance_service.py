@@ -1,3 +1,4 @@
+import time
 import uuid
 from decimal import Decimal
 from flask import Flask,jsonify,request
@@ -5,8 +6,8 @@ import json,threading
 from DataController.kafka import KafkaHelper
 from binance import Binance
 from colorama import Fore
-from DataController.binance import getBinanceTradeOrder
-from DataModel.binance import BinanceTradeOrderStatus
+from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateVerifiedOrders
+from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
     
  
 app = Flask(__name__)
@@ -209,22 +210,17 @@ def createOrder():
     try:
         id = str(uuid.uuid4().int)
         orderID = id[:16]
-        order = {
-            "id":orderID,
-            "ctid":request_data.get("ctid"),
-            "price":request_data.get("price"),
-            "qty":request_data.get("qty"),
-            "status": BinanceTradeOrderStatus.NEW,
-            "ordertype":1, # 1 - LIMIT order  0 - Market order
-            "trantype": 0 if request_data.get("trantype") == "BUY" else 1, # 0 - buy 1 - sell
-            "coinpair":request_data.get("coinpair"),
-            "exchgid":1,
-            "event":"httpEvent",
-            "action":"CREATE_ORDER"
-        }
-        partitionId = int(request_data.get("ctid")) % partitionCount
-        # KafkaHelper.producer.send('binance-orders',order,key = b"httpEvent")
-        KafkaHelper.producer.send('binance-requests',order,partition=partitionId,key = b"httpEvent")
+        order = createTradeOrderVerified(
+            orderid = orderID,
+            clientid=request_data.get("clientid"),
+            price = request_data.get("price"),
+            amount = request_data.get("qty"),
+            coinpair = request_data.get("coinpair"),
+            status = TradeOrderVerifiedStatus.VERIFIED, 
+            ordertype = 1, # 1 - LIMIT order  0 - Market order, 
+            trantype = 0 if request_data.get("trantype") == "BUY" else 1, # 0 - buy 1 - sell, 
+            exchgid = 1,
+        )
         print(f"Order create successfully order - {order}")
     except Exception as e:
         print(str(e))
@@ -248,10 +244,9 @@ def cancelOrder(orderId):
             "eventType":"httpEvent",
             "action":"CANCEL_ORDER"
         }
-        print(Fore.YELLOW+f"Producer cancel order -> {orderData}"+Fore.RESET)
-        #KafkaHelper.producer.send('binance-orders',orderData,key = b"httpEvent")
-        partitionId = int(order['ctid']) % partitionCount
-        KafkaHelper.producer.send('binance-requests',order,partition=partitionId,key = b"httpEvent")
+        partitionId = int(order['clientorderid']) % partitionCount
+        print(Fore.YELLOW+f"Producer cancel order -> {orderData}  partition ID -> {partitionId}"+Fore.RESET)
+        KafkaHelper.producer.send('binance-orders',orderData,partition=partitionId)
     except Exception as e:
         print(str(e))
         return jsonify({"status":"error","message":str(e)})
@@ -280,11 +275,9 @@ def watchBinanceCyptoOrders(*argv):
             print(str(message))
     except Exception as e:
         print(str(e))
-         
         
-def init_thread(func,partitionID):
-    t = threading.Thread(target=func,args=(partitionID))
-    t.daemon = True
+def init_thread(func):
+    t = threading.Thread(target=func)
     t.start()
 
 binance = None

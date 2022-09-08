@@ -51,3 +51,7 @@ CREATE TABLE `binancetradeorders` (
   `trandata` mediumtext,
   PRIMARY KEY (`id`)
 )
+
+86400000
+
+604800000
