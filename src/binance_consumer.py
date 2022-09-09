@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 import uuid
@@ -8,7 +9,6 @@ from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
 from colorama import Fore
 
 from binance import Binance
-
 
 def processVerifiedOrder():
     print(f"Process Verified order started")    
@@ -106,7 +106,7 @@ def processEventConsumer(partitionID=None):
         for message in consumer:
             print(f"type - {type(message.value)} data -> {message.value}")
             message = json.loads(message.value)
-            print(Fore.GREEN+f"Order data -> {message}")
+            print(Fore.YELLOW+f"Order data -> {message}")
             errorMsg = None
             try:
                 if message['eventType'] == "httpEvent":
@@ -114,6 +114,7 @@ def processEventConsumer(partitionID=None):
                     if message['action'] == "NEW": 
                         print(Fore.YELLOW+"============================================ NEW ==================================================")
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        #update only if the exchange order id is not updated 
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
                             exchgorderid = message['orderId'],
@@ -143,6 +144,7 @@ def processEventConsumer(partitionID=None):
                             exchgorderid = message['orderId'],
                             status= BinanceTradeOrderStatus.FULLY_FILLED
                         ) 
+                        validateOrder(orderId = message['clientOrderId'])
                     if message['status'] == 'PENDING_CANCEL':
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -188,6 +190,7 @@ def processEventConsumer(partitionID=None):
                     if message['X'] == "NEW":
                         print(Fore.YELLOW+"============================================ NEW =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        #update only if the exchange order id is not updated 
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
                             exchgorderid = message['i'],
@@ -295,7 +298,13 @@ def processEventConsumer(partitionID=None):
                 consumer.commit()
             except Exception as e:
                 msg = errorMsg if errorMsg else str(e)
-                print(f"Unable to process event for order {orderID} due to {msg}")         
+                print(f"Unable to process event for order {orderID} due to {msg}")
+                
+                
+def validateOrder(clinetOrderId):
+    order = getBinanceTradeOrder(clinetOrderId=clinetOrderId)
+    print(Fore.YELLOW+f"Validate Order -> {order}")
+             
         
 # def init_thread(func):
 #     t = threading.Thread(target=func)

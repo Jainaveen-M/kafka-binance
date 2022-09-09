@@ -1,3 +1,4 @@
+import logging
 import time
 import uuid
 from decimal import Decimal
@@ -8,11 +9,13 @@ from binance import Binance
 from colorama import Fore
 from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateVerifiedOrders
 from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
-    
+import logging
+
  
 app = Flask(__name__)
 
 app_name = "Binance_demo"
+logging.basicConfig(filename="service_log.log", level=logging.info)   
 
 @app.route("/",methods=["GET"])   
 def basic():
@@ -221,7 +224,7 @@ def createOrder():
             trantype = 0 if request_data.get("trantype") == "BUY" else 1, # 0 - buy 1 - sell, 
             exchgid = 1,
         )
-        print(f"Order create successfully order - {order}")
+        logging.debug(f"Order create successfully order - {order}")
     except Exception as e:
         print(str(e))
         return jsonify({"status":"error","message":str(e)})

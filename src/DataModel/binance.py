@@ -47,6 +47,7 @@ class BinanceTradeOrderStatus():
     CANCELED = 5
     REJECTED = 6
     EXPIRED = 7
+    CLOSED = 10
 
 
 
