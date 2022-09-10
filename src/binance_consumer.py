@@ -144,7 +144,6 @@ def processEventConsumer(partitionID=None):
                             exchgorderid = message['orderId'],
                             status= BinanceTradeOrderStatus.FULLY_FILLED
                         ) 
-                        validateOrder(orderId = message['clientOrderId'])
                     if message['status'] == 'PENDING_CANCEL':
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
@@ -300,12 +299,6 @@ def processEventConsumer(partitionID=None):
                 msg = errorMsg if errorMsg else str(e)
                 print(f"Unable to process event for order {orderID} due to {msg}")
                 
-                
-def validateOrder(clinetOrderId):
-    order = getBinanceTradeOrder(clinetOrderId=clinetOrderId)
-    print(Fore.YELLOW+f"Validate Order -> {order}")
-             
-        
 # def init_thread(func):
 #     t = threading.Thread(target=func)
 #     t.start()
@@ -328,7 +321,8 @@ if __name__ == "__main__":
     partitionCount = KafkaHelper.getPartitionCount()
 
         
-    init_thread(func=processVerifiedOrder)    
+    init_thread(func=processVerifiedOrder)
+    
     # order queue
     init_thread(func=processOrderConsumer,args=(0,))
     init_thread(func=processOrderConsumer,args=(1,))

@@ -2,7 +2,6 @@ from unittest import result
 from DataModel.binance import BINANCETRADEORDERS, TRADEORDERVERIFIED
 from db import Session,engine
 
-
 def createBinanceTradeOrder(
         ctid = None,
         clientorderid = None,
@@ -102,21 +101,28 @@ def getBinanceTradeOrder(
 ):
     db_session = Session(bind=engine)
     query = db_session.query(BINANCETRADEORDERS)
-    data = None
+    data = []
     try:
         if id is not None:
             query = query.filter(BINANCETRADEORDERS.id == id).one()
+            return query.as_dict()
         if clientorderid is not None:
             query = query.filter(BINANCETRADEORDERS.clientorderid == clientorderid).one()
+            return query.as_dict()
         if status is not None:
-            query = query.filter(BINANCETRADEORDERS.status == status).one()
+            if isinstance(status,list):
+                query = query.filter(BINANCETRADEORDERS.status.in_(status))
+            else:
+                query = query.filter(BINANCETRADEORDERS.status == status).one()
         if ctid is not None:
             query = query.filter(BINANCETRADEORDERS.ctid == ctid).one()
-        data = query.as_dict()
+            return query.as_dict()
+        for row in query:
+            data.append(row.as_dict())
         print(f"Order Data from query {data}")
     except Exception as e:
         print(str(e))
-    return data
+    return data 
 
 
 

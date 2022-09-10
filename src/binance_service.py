@@ -7,15 +7,13 @@ import json,threading
 from DataController.kafka import KafkaHelper
 from binance import Binance
 from colorama import Fore
-from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateVerifiedOrders
+from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateBinanceTradeOrder, updateVerifiedOrders
 from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
-import logging
 
  
 app = Flask(__name__)
 
 app_name = "Binance_demo"
-logging.basicConfig(filename="service_log.log", level=logging.info)   
 
 @app.route("/",methods=["GET"])   
 def basic():
@@ -278,6 +276,26 @@ def watchBinanceCyptoOrders(*argv):
             print(str(message))
     except Exception as e:
         print(str(e))
+
+#Job to process the order when the order got fully executed or canceled               
+def validateOrder():
+    print(f"Process validate order started")
+    while True:
+        try:    
+            orders = getBinanceTradeOrder(status=[BinanceTradeOrderStatus.CANCELED,BinanceTradeOrderStatus.FULLY_FILLED])
+            print(Fore.YELLOW+f"Validate Order -> {orders}"+Fore.RESET)
+            for order in orders:
+                bianceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
+                trandata = json.loads(order['trandata'])
+                print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
+                updateBinanceTradeOrder(
+                    clientorderid = order['clientorderid'],
+                    status = BinanceTradeOrderStatus.CLOSED,
+                )
+        except Exception as e:
+            print(Fore.RED+f"{str(e)}"+Fore.RESET)
+        time.sleep(10)
         
 def init_thread(func):
     t = threading.Thread(target=func)
@@ -292,4 +310,5 @@ if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
+    init_thread(func=validateOrder)    
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
