@@ -200,7 +200,7 @@ def processEventConsumer(partitionID=None):
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         trandata = None
                         new_trandata = {
-                                    "price":message['p'],
+                                    "price":message['L'],
                                     "qty":message['l'],
                                     "commission":message['n'],
                                     "commissionAsset":message['N'],
@@ -229,7 +229,7 @@ def processEventConsumer(partitionID=None):
                         print(Fore.YELLOW+"============================================ FILLED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
                         new_trandata = {
-                                    "price":message['p'],
+                                    "price":message['L'],
                                     "qty":message['l'],
                                     "commission":message['n'],
                                     "commissionAsset":message['N'],

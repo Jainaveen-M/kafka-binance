@@ -287,8 +287,9 @@ def validateOrder():
             for order in orders:
                 bianceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
                 print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
-                trandata = json.loads(order['trandata'])
-                print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
+                if order['trandata'] is not None:
+                    trandata = json.loads(order['trandata'])
+                    print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
                 updateBinanceTradeOrder(
                     clientorderid = order['clientorderid'],
                     status = BinanceTradeOrderStatus.CLOSED,

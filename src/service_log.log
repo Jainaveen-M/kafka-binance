@@ -1,0 +1,46 @@
+Order data -> {'e': 'executionReport', 'E': 1662787603889, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'NEW', 'X': 'NEW', 'r': 'NONE', 'i': 128297, 'l': '0.00000000', 'z': '0.00000000', 'L': '0.00000000', 'n': '0', 'N': None, 'T': 1662787603888, 't': -1, 'I': 266118, 'w': True, 'm': False, 'M': False, 'O': 1662787603888, 'Z': '0.00000000', 'Y': '0.00000000', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'NEW'}
+============================================ NEW ==================================================
+Consumer_process_event eventType - wsocketEvent - action : NEW - data -> {'e': 'executionReport', 'E': 1662787603889, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'NEW', 'X': 'NEW', 'r': 'NONE', 'i': 128297, 'l': '0.00000000', 'z': '0.00000000', 'L': '0.00000000', 'n': '0', 'N': None, 'T': 1662787603888, 't': -1, 'I': 266118, 'w': True, 'm': False, 'M': False, 'O': 1662787603888, 'Z': '0.00000000', 'Y': '0.00000000', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'NEW'}
+
+
+FROM binancetradeorders
+WHERE binancetradeorders.clientorderid = %(clientorderid_1)s FOR UPDATE
+
+Consumer_process_order - action : CREATE_ORDER - data -> {'symbol': 'TRXUSDT', 'orderId': 128297, 'orderListId': -1, 'clientOrderId': '2392052618401168', 'transactTime': 1662787603888, 'price': '0.06365000', 'origQty': '40000.00000000', 'executedQty': '14454.10000000', 'cummulativeQuoteQty': '920.00346500', 'status': 'PARTIALLY_FILLED', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'fills': [{'price': '0.06365000', 'qty': '14454.10000000', 'commission': '0.00000000', 'commissionAsset': 'TRX', 'tradeId': 9730}], 'eventType': 'httpEvent', 'action': 'PARTIALLY_FILLED'}
+
+
+
+type - <class 'bytes'> data -> b'{"symbol": "TRXUSDT", "orderId": 128297, "orderListId": -1, "clientOrderId": "2392052618401168", "transactTime": 1662787603888, "price": "0.06365000", "origQty": "40000.00000000", "executedQty": "14454.10000000", "cummulativeQuoteQty": "920.00346500", "status": "PARTIALLY_FILLED", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "fills": [{"price": "0.06365000", "qty": "14454.10000000", "commission": "0.00000000", "commissionAsset": "TRX", "tradeId": 9730}], "eventType": "httpEvent", "action": "PARTIALLY_FILLED"}'
+Order data -> {'symbol': 'TRXUSDT', 'orderId': 128297, 'orderListId': -1, 'clientOrderId': '2392052618401168', 'transactTime': 1662787603888, 'price': '0.06365000', 'origQty': '40000.00000000', 'executedQty': '14454.10000000', 'cummulativeQuoteQty': '920.00346500', 'status': 'PARTIALLY_FILLED', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'fills': [{'price': '0.06365000', 'qty': '14454.10000000', 'commission': '0.00000000', 'commissionAsset': 'TRX', 'tradeId': 9730}], 'eventType': 'httpEvent', 'action': 'PARTIALLY_FILLED'}
+============================================ PARTIALLY_FILLED ==================================================
+Consumer_process_event eventType - httpEvent - action : PARTIALLY_FILLED - data -> {'symbol': 'TRXUSDT', 'orderId': 128297, 'orderListId': -1, 'clientOrderId': '2392052618401168', 'transactTime': 1662787603888, 'price': '0.06365000', 'origQty': '40000.00000000', 'executedQty': '14454.10000000', 'cummulativeQuoteQty': '920.00346500', 'status': 'PARTIALLY_FILLED', 'timeInForce': 'GTC', 'type': 'LIMIT', 'side': 'BUY', 'fills': [{'price': '0.06365000', 'qty': '14454.10000000', 'commission': '0.00000000', 'commissionAsset': 'TRX', 'tradeId': 9730}], 'eventType': 'httpEvent', 'action': 'PARTIALLY_FILLED'}
+
+
+FROM binancetradeorders
+WHERE binancetradeorders.clientorderid = %(clientorderid_1)s FOR UPDATE
+
+
+
+type - <class 'bytes'> data -> b'{"e": "executionReport", "E": 1662787603889, "s": "TRXUSDT", "c": "2392052618401168", "S": "BUY", "o": "LIMIT", "f": "GTC", "q": "40000.00000000", "p": "0.06365000", "P": "0.00000000", "F": "0.00000000", "g": -1, "C": "", "x": "TRADE", "X": "PARTIALLY_FILLED", "r": "NONE", "i": 128297, "l": "14454.10000000", "z": "14454.10000000", "L": "0.06365000", "n": "0.00000000", "N": "TRX", "T": 1662787603888, "t": 9730, "I": 266119, "w": false, "m": false, "M": true, "O": 1662787603888, "Z": "920.00346500", "Y": "920.00346500", "Q": "0.00000000", "eventType": "wsocketEvent", "action": "TRADE"}'
+Order data -> {'e': 'executionReport', 'E': 1662787603889, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'PARTIALLY_FILLED', 'r': 'NONE', 'i': 128297, 'l': '14454.10000000', 'z': '14454.10000000', 'L': '0.06365000', 'n': '0.00000000', 'N': 'TRX', 'T': 1662787603888, 't': 9730, 'I': 266119, 'w': False, 'm': False, 'M': True, 'O': 1662787603888, 'Z': '920.00346500', 'Y': '920.00346500', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'TRADE'}
+============================================ PARTIALLY_FILLED ==================================================
+Consumer_process_event eventType - wsocketEvent - action : TRADE - data -> {'e': 'executionReport', 'E': 1662787603889, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'PARTIALLY_FILLED', 'r': 'NONE', 'i': 128297, 'l': '14454.10000000', 'z': '14454.10000000', 'L': '0.06365000', 'n': '0.00000000', 'N': 'TRX', 'T': 1662787603888, 't': 9730, 'I': 266119, 'w': False, 'm': False, 'M': True, 'O': 1662787603888, 'Z': '920.00346500', 'Y': '920.00346500', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'TRADE'}
+
+
+FROM binancetradeorders
+WHERE binancetradeorders.clientorderid = %(clientorderid_1)s
+
+
+Trandata -> {'executions': [{'price': '0.06365000', 'qty': '14454.10000000', 'commission': '0.00000000', 'commissionAsset': 'TRX', 'tradeId': 9730}]}
+
+
+FROM binancetradeorders
+WHERE binancetradeorders.clientorderid = %(clientorderid_1)s FOR UPDATE
+
+
+Order data -> {'e': 'executionReport', 'E': 1662787726773, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 128297, 'l': '12820.00000000', 'z': '40000.00000000', 'L': '0.06365000', 'n': '0.00000000', 'N': 'TRX', 'T': 1662787726773, 't': 9733, 'I': 266293, 'w': False, 'm': True, 'M': True, 'O': 1662787603888, 'Z': '2546.00000000', 'Y': '815.99300000', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'TRADE'}
+============================================ FILLED ==================================================
+Consumer_process_event eventType - wsocketEvent - action : TRADE - data -> {'e': 'executionReport', 'E': 1662787726773, 's': 'TRXUSDT', 'c': '2392052618401168', 'S': 'BUY', 'o': 'LIMIT', 'f': 'GTC', 'q': '40000.00000000', 'p': '0.06365000', 'P': '0.00000000', 'F': '0.00000000', 'g': -1, 'C': '', 'x': 'TRADE', 'X': 'FILLED', 'r': 'NONE', 'i': 128297, 'l': '12820.00000000', 'z': '40000.00000000', 'L': '0.06365000', 'n': '0.00000000', 'N': 'TRX', 'T': 1662787726773, 't': 9733, 'I': 266293, 'w': False, 'm': True, 'M': True, 'O': 1662787603888, 'Z': '2546.00000000', 'Y': '815.99300000', 'Q': '0.00000000', 'eventType': 'wsocketEvent', 'action': 'TRADE'}
+
+
+
