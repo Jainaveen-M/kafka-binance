@@ -8,7 +8,7 @@ from DataController.kafka import KafkaHelper
 from binance import Binance
 from colorama import Fore
 from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateBinanceTradeOrder, updateVerifiedOrders
-from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
+from DataModel.binance import BinanceTradeAction, BinanceTradeOrderStatus, TradeOrderVerifiedStatus
 
  
 app = Flask(__name__)
@@ -57,10 +57,11 @@ def gettradehistory():
     return jsonify({"status":"success","message":result})
 
 
-@app.route("/getmytrades/<symbol>",methods=["POST"])   
-def getmytrades(symbol):
+@app.route("/getmytrades",methods=["POST"])   
+def getmytrades():
     binance = Binance()
-    result = binance.get_my_trades(symbol=symbol) # we can mention the fromid to get the trade history
+    request_data = request.get_json()
+    result = binance.get_my_trades(symbol=request_data['symbol'],orderId = request_data['orderId']) # we can mention the fromid to get the trade history
     return jsonify({"status":"success","message":result})
 
 # work only in live api
@@ -305,7 +306,7 @@ def validateOrder():
                 if qtyExecuted == Decimal(order['qty']) and quoteQty == Decimal(bianceOrderDetail['cummulativeQuoteQty']):
                     updateBinanceTradeOrder(
                         clientorderid = order['clientorderid'],
-                        status = BinanceTradeOrderStatus.CLOSED,
+                        status = BinanceTradeAction.CLOSED,
                     )
         except Exception as e:
             print(Fore.RED+f"{str(e)}"+Fore.RESET)
