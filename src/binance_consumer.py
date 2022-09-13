@@ -5,7 +5,7 @@ import uuid
 from DataController.kafka import KafkaConsumer, KafkaHelper,TopicPartition
 import json
 from DataController.binance import createBinanceTradeOrder, getBinanceTradeOrder, getVerifiedOrders,updateBinanceTradeOrder, updateVerifiedOrders
-from DataModel.binance import BinanceTradeOrderStatus, TradeOrderVerifiedStatus
+from DataModel.binance import BinanceTradeAction, BinanceTradeOrderStatus, TradeOrderVerifiedStatus
 from colorama import Fore
 
 from binance import Binance
@@ -56,7 +56,8 @@ def processOrderConsumer(partitionID=None):
                         ordertype = message['ordertype'],
                         trantype =  message['trantype'],
                         coinpair = message['coinpair'], 
-                        exchgid = 1
+                        exchgid = 1,
+                        action = BinanceTradeAction.CREATE,
                     )
                     binanceOrder = binance.create_order(
                         newClientOrderId = str(message['orderid']),
@@ -157,12 +158,10 @@ def processEventConsumer(partitionID=None):
                         order = getBinanceTradeOrder(clientorderid=message['origClientOrderId'])
                         status = None
                         orderID = message['origClientOrderId']
-                        if order['status'] in [BinanceTradeOrderStatus.NEW,BinanceTradeOrderStatus.ORDER_PLACED,BinanceTradeOrderStatus.PARTIALLY_FILLED,BinanceTradeOrderStatus.PENDING_CANCEL]:
-                           status = BinanceTradeOrderStatus.CANCELED
-                        elif order['status'] == BinanceTradeOrderStatus.CANCELED:
-                            errorMsg = "Order closed by WEBSOCKET Event"
-                            print(errorMsg)
-                            raise Exception(errorMsg)
+                        if order['status'] == BinanceTradeOrderStatus.ORDER_PLACED:
+                            status = BinanceTradeOrderStatus.ORDER_PLACED_AND_CANCELLED
+                        elif order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status = BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CANCELLED
                         else:
                             errorMsg = "Unable to cancel the order due to invalid status"
                             raise Exception(errorMsg)
@@ -180,9 +179,17 @@ def processEventConsumer(partitionID=None):
                     if message['status'] == 'EXPIRED':
                         print(Fore.YELLOW+"============================================ EXPIRED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        status = None
+                        if order['status'] == BinanceTradeOrderStatus.ORDER_PLACED:
+                            status = BinanceTradeOrderStatus.ORDER_PLACED_AND_EXPIRED
+                        elif order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status = BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_EXPIRED
+                        else:
+                            errorMsg = "Unable to cancel the order due to invalid status"
+                            raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
-                            status= BinanceTradeOrderStatus.EXPIRED
+                            status= status
                         ) 
                 if  message['eventType'] == "wsocketEvent":
                     orderID = message['c']
@@ -267,12 +274,10 @@ def processEventConsumer(partitionID=None):
                         order = getBinanceTradeOrder(clientorderid=message['C'])
                         status = None
                         orderID = message['C']
-                        if order['status'] in [BinanceTradeOrderStatus.NEW,BinanceTradeOrderStatus.ORDER_PLACED,BinanceTradeOrderStatus.PARTIALLY_FILLED,BinanceTradeOrderStatus.PENDING_CANCEL]:
-                               status = BinanceTradeOrderStatus.CANCELED
-                        elif order['status'] == BinanceTradeOrderStatus.CANCELED:
-                            errorMsg = "Order closed by HTTP Event"
-                            print(errorMsg)
-                            raise Exception(errorMsg)
+                        if order['status'] == BinanceTradeOrderStatus.ORDER_PLACED:
+                            status = BinanceTradeOrderStatus.ORDER_PLACED_AND_CANCELLED
+                        elif order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status = BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CANCELLED
                         else:
                             errorMsg = "Unable to cancel the order due to invalid status"
                             raise Exception(errorMsg)
@@ -290,9 +295,17 @@ def processEventConsumer(partitionID=None):
                     if message['X'] == 'EXPIRED':
                         print(Fore.YELLOW+"============================================ EXPIRED =================================================="+Fore.RESET)
                         print(Fore.GREEN+f"Consumer_process_event eventType - {message['eventType']} - action : {message['action']} - data -> {message}"+Fore.RESET)
+                        status = None
+                        if order['status'] == BinanceTradeOrderStatus.ORDER_PLACED:
+                            status = BinanceTradeOrderStatus.ORDER_PLACED_AND_EXPIRED
+                        elif order['status'] == BinanceTradeOrderStatus.PARTIALLY_FILLED:
+                            status = BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_EXPIRED
+                        else:
+                            errorMsg = "Unable to cancel the order due to invalid status"
+                            raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
-                            status= BinanceTradeOrderStatus.EXPIRED
+                            status=status
                         )
                 consumer.commit()
             except Exception as e:

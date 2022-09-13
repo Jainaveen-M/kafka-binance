@@ -14,6 +14,7 @@ def createBinanceTradeOrder(
         exchgid = None, 
         exchgorderid = None, 
         trandata = None,
+        action = None,
     ):
     db_session = Session(bind=engine)
     binanceOrder = BINANCETRADEORDERS(
@@ -28,6 +29,7 @@ def createBinanceTradeOrder(
         exchgid = exchgid, 
         exchgorderid = exchgorderid, 
         trandata = trandata,
+        action = action,
     ) 
     db_session.add(binanceOrder);
     db_session.commit()
@@ -46,6 +48,7 @@ def set_binance_trade_order_obj(
         exchgid = None, 
         exchgorderid = None, 
         trandata = None,
+        action = None,
         set_keys = None,
 ):
     if set_keys is None:
@@ -67,6 +70,7 @@ def updateBinanceTradeOrder(
         exchgid = None, 
         exchgorderid = None, 
         trandata = None,
+        action = None,
 ):
     db_session = Session(bind=engine)
     
@@ -86,6 +90,7 @@ def updateBinanceTradeOrder(
         exchgid = exchgid, 
         exchgorderid = exchgorderid, 
         trandata = trandata,
+        action = action,
     )
     db_session.flush()
     db_session.commit()
@@ -97,6 +102,7 @@ def getBinanceTradeOrder(
     clientorderid = None,
     status = None,
     ctid = None,
+    action = None,
     db_session = None
 ):
     db_session = Session(bind=engine)
@@ -114,6 +120,11 @@ def getBinanceTradeOrder(
                 query = query.filter(BINANCETRADEORDERS.status.in_(status))
             else:
                 query = query.filter(BINANCETRADEORDERS.status == status).one()
+        if action is not None:
+            if isinstance(status,list):
+                query = query.filter(BINANCETRADEORDERS.action.in_(action))
+            else:
+                query = query.filter(BINANCETRADEORDERS.action == action).one()
         if ctid is not None:
             query = query.filter(BINANCETRADEORDERS.ctid == ctid).one()
             return query.as_dict()

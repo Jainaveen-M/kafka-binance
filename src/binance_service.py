@@ -49,10 +49,11 @@ def getOpenorders(symbol=None):
     result = binance.get_open_orders()
     return jsonify({"status":"success","message":result})
 
-@app.route("/gettradehistory",methods=["GET"])   
+@app.route("/gettradehistory",methods=["POST"])   
 def gettradehistory():
     binance = Binance()
-    result = binance.get_all_orders(symbol="TRXUSDT")
+    request_data = request.get_json()
+    result = binance.get_all_orders(symbol=request_data.get("symbol"),orderId =request_data.get("orderId"))
     return jsonify({"status":"success","message":result})
 
 
@@ -282,18 +283,30 @@ def validateOrder():
     print(f"Process validate order started")
     while True:
         try:    
-            orders = getBinanceTradeOrder(status=[BinanceTradeOrderStatus.CANCELED,BinanceTradeOrderStatus.FULLY_FILLED])
+            orders = getBinanceTradeOrder(status=[BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CANCELLED,BinanceTradeOrderStatus.FULLY_FILLED,BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_EXPIRED])
             print(Fore.YELLOW+f"Validate Order -> {orders}"+Fore.RESET)
             for order in orders:
                 bianceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                qtyExecuted = 0
+                quoteQty = Decimal(order['qty']) * Decimal(order['price'])
                 print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
                 if order['trandata'] is not None:
                     trandata = json.loads(order['trandata'])
                     print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
-                updateBinanceTradeOrder(
-                    clientorderid = order['clientorderid'],
-                    status = BinanceTradeOrderStatus.CLOSED,
-                )
+                   
+                    for transaction in trandata['executions']:
+                        qtyExecuted += Decimal(transaction['qty'])
+                        print(f"Transaction -> {transaction}")
+                    print(f"qtyExecuted  {qtyExecuted}")
+                #check if the placed qty is same as Executed qty if yes move the status to CLOSED(10)
+                # check if the cummulativeQuoteQty is same as qty * price 
+                print(Fore.BLUE+f"QTY PLACED {order['qty']}    QTY EXECUTED {qtyExecuted}"+Fore.RESET)
+                print(Fore.BLUE+f"QUOTE QTY PLACED {quoteQty}    QUOTE QTY EXECUTED {Decimal(bianceOrderDetail['cummulativeQuoteQty'])}"+Fore.RESET)
+                if qtyExecuted == Decimal(order['qty']) and quoteQty == Decimal(bianceOrderDetail['cummulativeQuoteQty']):
+                    updateBinanceTradeOrder(
+                        clientorderid = order['clientorderid'],
+                        status = BinanceTradeOrderStatus.CLOSED,
+                    )
         except Exception as e:
             print(Fore.RED+f"{str(e)}"+Fore.RESET)
         time.sleep(10)

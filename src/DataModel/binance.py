@@ -21,6 +21,7 @@ class BINANCETRADEORDERS(Base):
     exchgid = Column(Integer())
     exchgorderid = Column(String())
     trandata = Column(String())
+    action = Column(Integer())
 
     def as_dict(self):
         return {
@@ -36,6 +37,7 @@ class BINANCETRADEORDERS(Base):
             "exchgid" : self.exchgid, 
             "exchgorderid" : self.exchgorderid, 
             "trandata" : self.trandata,
+            "action" : self.action
         }
     
 class BinanceTradeOrderStatus():
@@ -43,11 +45,25 @@ class BinanceTradeOrderStatus():
     ORDER_PLACED = 1
     PARTIALLY_FILLED = 2
     FULLY_FILLED = 3
-    PENDING_CANCEL = 4
-    CANCELED = 5
-    REJECTED = 6
-    EXPIRED = 7
-    CLOSED = 10
+    PARTIALLY_FILLED_AND_CANCELLED = 4
+    PARTIALLY_FILLED_AND_EXPIRED = 5
+    ORDER_PLACED_AND_CANCELLED = 6
+    ORDER_PLACED_AND_EXPIRED = 7
+    REJECTED = 8
+
+class BinanceTradeAction():
+    CREATE = 1
+    CANCEL = 2
+    ADMIN_CANCEL = 3
+    TO_CLOSE = 4
+    CLOSED = 5
+    
+    
+    
+
+    
+    
+    
 
 
 
