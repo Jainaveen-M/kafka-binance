@@ -245,7 +245,7 @@ def cancelOrder(orderId):
             "coinpair": order['coinpair'],
             "clientorderid": order['clientorderid'],
             "eventType":"httpEvent",
-            "action":"CANCEL_ORDER"
+            "eventName":"CANCEL_ORDER"
         }
         partitionId = int(order['clientorderid']) % partitionCount
         print(Fore.YELLOW+f"Producer cancel order -> {orderData}  partition ID -> {partitionId}"+Fore.RESET)
@@ -267,7 +267,7 @@ def watchBinanceCyptoOrders(*argv):
             orderId = message['i']
             partitionId = orderId % partitionCount
             message['eventType'] = 'wsocketEvent'
-            message['action'] = message['x']
+            message['eventName'] = message['x']
             print(f"watchBinanceCyptoOrderstype - {type(message)}")
             KafkaHelper.producer.send('binance-events',message,partition=partitionId,key=b"wsocketEvent")
             print("event produced")
