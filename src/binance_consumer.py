@@ -143,7 +143,8 @@ def processEventConsumer(partitionID=None):
                             clientorderid = message['clientOrderId'],
                             trandata= json.dumps(trandata),
                             exchgorderid = message['orderId'],
-                            status= BinanceTradeOrderStatus.FULLY_FILLED
+                            status= BinanceTradeOrderStatus.FULLY_FILLED,
+                            action = BinanceTradeAction.TO_CLOSE
                         ) 
                     if message['status'] == 'PENDING_CANCEL':
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
@@ -167,7 +168,8 @@ def processEventConsumer(partitionID=None):
                             raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['origClientOrderId'],
-                            status = status
+                            status = status,
+                            action = BinanceTradeAction.TO_CLOSE
                         )                         
                     if message['status'] == "REJECTED":
                         print(Fore.YELLOW+"============================================ REJECTED =================================================="+Fore.RESET)
@@ -189,7 +191,8 @@ def processEventConsumer(partitionID=None):
                             raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['clientOrderId'],
-                            status= status
+                            status= status,
+                            action = BinanceTradeAction.TO_CLOSE
                         ) 
                 if  message['eventType'] == "wsocketEvent":
                     orderID = message['c']
@@ -258,7 +261,8 @@ def processEventConsumer(partitionID=None):
                             clientorderid = message['c'],
                             trandata= json.dumps(trandata),
                             exchgorderid = message['i'],
-                            status= BinanceTradeOrderStatus.FULLY_FILLED
+                            status= BinanceTradeOrderStatus.FULLY_FILLED,
+                            action = BinanceTradeAction.TO_CLOSE
                         ) 
                     if message['X'] == 'PENDING_CANCEL':
                         print(Fore.YELLOW+"============================================ PENDING_CANCEL =================================================="+Fore.RESET)
@@ -283,7 +287,8 @@ def processEventConsumer(partitionID=None):
                             raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['C'],
-                            status = status
+                            status = status,
+                            action = BinanceTradeAction.TO_CLOSE
                         )    
                     if message['X'] == "REJECTED":
                         print(Fore.YELLOW+"============================================ REJECTED =================================================="+Fore.RESET)
@@ -305,7 +310,8 @@ def processEventConsumer(partitionID=None):
                             raise Exception(errorMsg)
                         updateBinanceTradeOrder(
                             clientorderid = message['c'],
-                            status=status
+                            status=status,
+                            action = BinanceTradeAction.TO_CLOSE
                         )
                 consumer.commit()
             except Exception as e:
