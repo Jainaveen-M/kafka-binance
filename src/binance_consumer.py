@@ -97,12 +97,12 @@ def processOrderConsumer(partitionID=None):
                     print(Fore.GREEN+f"Consumer_process_order - eventName : CANCEL_ORDER - data -> {binanceOrder}"+Fore.RESET)
                 
                 if message['eventName'] == "REJECT_ORDER":
-                    consumer.commit()
                     print(f"Message from consumer -> {message}")
                     updateBinanceTradeOrder(
                             clientorderid = message['orderid'],
                             status= BinanceTradeOrderStatus.INTERNAL_REJECT
-                        )   
+                        )
+                    consumer.commit()   
                     print(Fore.GREEN+f"Consumer_process_order - eventName : REJECT_ORDER - data -> { message['orderid']}"+Fore.RESET)
                 
             except Exception as e:

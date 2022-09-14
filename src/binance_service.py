@@ -378,6 +378,9 @@ def processStaleOrders():
                 if order['status'] == BinanceTradeOrderStatus.NEW:
                     verifiedOrder = getVerifiedOrders(status=TradeOrderVerifiedStatus.PROCESSED,orderid=order['clientorderid'])
                     print(f"Verified order in status 0 {verifiedOrder}")
+                    """
+                    When orders are not placed in binance for certain time we will reject the order
+                    """
                     if diff_in_minutes > ORDER_THRESHOLD: # grater then 2 mins
                         partitionId =int(verifiedOrder['orderid']) % partitionCount
                         verifiedOrder['eventName'] = "REJECT_ORDER"
