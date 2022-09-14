@@ -55,3 +55,24 @@ CREATE TABLE `binancetradeorders` (
 86400000
 
 604800000
+
+
+
+CREATE TABLE `binancetradeorders` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ctid` bigint DEFAULT NULL,
+  `clientorderid` varchar(200) DEFAULT '0',
+  `price` varchar(200) NOT NULL DEFAULT '0.00000000',
+  `qty` varchar(200) NOT NULL DEFAULT '0.00000000',
+  `updatedtime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdTime` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` smallint unsigned NOT NULL DEFAULT '0',
+  `action` smallint NOT NULL,
+  `ordertype` smallint unsigned NOT NULL DEFAULT '0',
+  `trantype` smallint NOT NULL DEFAULT '0',
+  `coinpair` varchar(45) NOT NULL DEFAULT '',
+  `exchgid` smallint unsigned NOT NULL DEFAULT '0',
+  `exchgorderid` varchar(45) DEFAULT '0',
+  `trandata` mediumtext,
+  PRIMARY KEY (`id`)
+)

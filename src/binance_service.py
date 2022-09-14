@@ -281,7 +281,6 @@ def watchBinanceCyptoOrders(*argv):
         print(str(e))
 
 
-
 def processVerifiedOrder():
     print(f"Process Verified order started")    
     while True:
@@ -299,11 +298,8 @@ def processVerifiedOrder():
                 )
             except Exception as e:
                 print(str(e))
-        time.sleep(3)   
-        
-        
-        
-        
+        time.sleep(3)    
+               
 #Job to process the order when the order got fully executed or canceled               
 """
 get the orders with action to_close
@@ -319,6 +315,7 @@ def validateOrder():
         try:    
             orders = getBinanceTradeOrder(action=BinanceTradeAction.TO_CLOSE)
             print(Fore.YELLOW+f"Validate Order -> {orders}"+Fore.RESET)
+            trandata = None
             for order in orders:
                 print(f"+++ Order details -> {order}")
                 binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
@@ -336,8 +333,10 @@ def validateOrder():
                     binance_trandata.append(new_trandata)
                 
                 print(Fore.BLUE+f"{binance_trandata}"+Fore.RESET)
-                trandata = json.loads(order['trandata'])
-                if binance_trandata == trandata['executions']:
+                if order['trandata'] is not None:
+                    trandata = json.loads(order['trandata'])
+                    trandata = trandata['executions']
+                if binance_trandata == trandata:
                     print("+++++++ Both are same +++++")
                 else:
                     print("++++++++ Updating the new trandata ++++++")
@@ -414,10 +413,9 @@ if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
-    
     init_thread(func=processVerifiedOrder)
     init_thread(func=validateOrder)    
-    init_thread(func=processStaleOrders)    
+    # init_thread(func=processStaleOrders)    
     
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
     

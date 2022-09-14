@@ -39,7 +39,7 @@ class BINANCETRADEORDERS(Base):
             "exchgorderid" : self.exchgorderid, 
             "trandata" : self.trandata,
             "action" : self.action,
-            "updatedtime":self.updatedtime
+            "updatedtime":str(self.updatedtime)
         }
     
 class BinanceTradeOrderStatus():
