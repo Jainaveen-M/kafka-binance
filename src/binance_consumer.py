@@ -1,7 +1,9 @@
+import datetime
 import logging
 import threading
 import time
 import uuid
+from xmlrpc.client import DateTime
 from DataController.kafka import KafkaConsumer, KafkaHelper,TopicPartition
 import json
 from DataController.binance import createBinanceTradeOrder, getBinanceTradeOrder, getVerifiedOrders,updateBinanceTradeOrder, updateVerifiedOrders
@@ -58,6 +60,7 @@ def processOrderConsumer(partitionID=None):
                         coinpair = message['coinpair'], 
                         exchgid = 1,
                         action = BinanceTradeAction.CREATE,
+                        updatedtime = datetime.datetime.now()
                     )
                     binanceOrder = binance.create_order(
                         newClientOrderId = str(message['orderid']),

@@ -15,6 +15,7 @@ def createBinanceTradeOrder(
         exchgorderid = None, 
         trandata = None,
         action = None,
+        updatedtime = None,
     ):
     db_session = Session(bind=engine)
     binanceOrder = BINANCETRADEORDERS(
@@ -30,6 +31,7 @@ def createBinanceTradeOrder(
         exchgorderid = exchgorderid, 
         trandata = trandata,
         action = action,
+        updatedtime = updatedtime
     ) 
     db_session.add(binanceOrder);
     db_session.commit()

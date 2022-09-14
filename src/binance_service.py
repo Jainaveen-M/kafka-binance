@@ -327,7 +327,7 @@ def validateOrder():
                     )
         except Exception as e:
             print(Fore.RED+f"{str(e)}"+Fore.RESET)
-        time.sleep(5)
+        time.sleep(10)
 
 
 
@@ -374,6 +374,7 @@ def processStaleOrders():
                     print(Fore.GREEN+f"process_stale_order - eventName : get order details - data -> {binanceOrderDetail}"+Fore.RESET)
             except Exception as e:
                 print(f"Unable to process the stale order - {orderID} due to {str(e)}")
+        time.sleep(10)
                     
 
 def init_thread(func):
@@ -389,7 +390,7 @@ if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
-    # init_thread(func=validateOrder)    
+    init_thread(func=validateOrder)    
     init_thread(func=processStaleOrders)    
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
     
