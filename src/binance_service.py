@@ -395,19 +395,3 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
     
     
-    
-# qtyExecuted = 0
-#                 quoteQty = Decimal(order['qty']) * Decimal(order['price'])
-#                 print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
-#                 if order['trandata'] is not None:
-#                     trandata = json.loads(order['trandata'])
-#                     print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
-                    
-#                     for transaction in trandata['executions']:
-#                         qtyExecuted += Decimal(transaction['qty'])
-#                         print(f"Transaction -> {transaction}")
-#                     print(f"qtyExecuted  {qtyExecuted}")
-#                 #check if the placed qty is same as Executed qty if yes move the status to CLOSED(10)
-#                 # check if the cummulativeQuoteQty is same as qty * price 
-#                 print(Fore.BLUE+f"QTY PLACED {order['qty']}    QTY EXECUTED {qtyExecuted}"+Fore.RESET)
-#                 print(Fore.BLUE+f"QUOTE QTY PLACED {quoteQty}    QUOTE QTY EXECUTED {Decimal(bianceOrderDetail['cummulativeQuoteQty'])}"+Fore.RESET)"
