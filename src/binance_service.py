@@ -280,6 +280,30 @@ def watchBinanceCyptoOrders(*argv):
     except Exception as e:
         print(str(e))
 
+
+
+def processVerifiedOrder():
+    print(f"Process Verified order started")    
+    while True:
+        verifiedOrders = getVerifiedOrders(status=TradeOrderVerifiedStatus.VERIFIED)
+        for order in verifiedOrders:
+            try:
+                print(Fore.YELLOW+f"Processing Order {order}"+Fore.RESET)
+                partitionId =int(order['orderid']) % partitionCount
+                order['eventName'] = "CREATE_ORDER"
+                print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
+                KafkaHelper.producer.send('binance-orders',order,partition=partitionId)
+                updateVerifiedOrders(
+                    id = order['id'],
+                    status = TradeOrderVerifiedStatus.PROCESSED
+                )
+            except Exception as e:
+                print(str(e))
+        time.sleep(3)   
+        
+        
+        
+        
 #Job to process the order when the order got fully executed or canceled               
 """
 get the orders with action to_close
@@ -390,8 +414,11 @@ if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
+    
+    init_thread(func=processVerifiedOrder)
     init_thread(func=validateOrder)    
     init_thread(func=processStaleOrders)    
+    
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
     
     

@@ -12,24 +12,7 @@ from colorama import Fore
 
 from binance import Binance
 
-def processVerifiedOrder():
-    print(f"Process Verified order started")    
-    while True:
-        verifiedOrders = getVerifiedOrders(status=TradeOrderVerifiedStatus.VERIFIED)
-        for order in verifiedOrders:
-            try:
-                print(Fore.YELLOW+f"Processing Order {order}"+Fore.RESET)
-                partitionId =int(order['orderid']) % partitionCount
-                order['eventName'] = "CREATE_ORDER"
-                print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
-                KafkaHelper.producer.send('binance-orders',order,partition=partitionId)
-                updateVerifiedOrders(
-                    id = order['id'],
-                    status = TradeOrderVerifiedStatus.PROCESSED
-                )
-            except Exception as e:
-                print(str(e))
-        time.sleep(3)                    
+                 
 
 def processOrderConsumer(partitionID=None):
     print(f"Process Order Consumer Started for partitionID - {partitionID}")
@@ -341,9 +324,6 @@ id = uuid.uuid1()
 if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
-
-        
-    init_thread(func=processVerifiedOrder)
     
     # order queue
     init_thread(func=processOrderConsumer,args=(0,))
