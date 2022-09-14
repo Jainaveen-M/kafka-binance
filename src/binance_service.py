@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 import uuid
@@ -280,38 +281,101 @@ def watchBinanceCyptoOrders(*argv):
         print(str(e))
 
 #Job to process the order when the order got fully executed or canceled               
+"""
+get the orders with action to_close
+make an api call to get the transaction data
+validate the transactions data
+if it is correct set the action to closed
+if not update the correct transaction data and set the action to closed
+"""
+
 def validateOrder():
     print(f"Process validate order started")
     while True:
         try:    
-            orders = getBinanceTradeOrder(status=[BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_CANCELLED,BinanceTradeOrderStatus.FULLY_FILLED,BinanceTradeOrderStatus.PARTIALLY_FILLED_AND_EXPIRED])
+            orders = getBinanceTradeOrder(action=BinanceTradeAction.TO_CLOSE)
             print(Fore.YELLOW+f"Validate Order -> {orders}"+Fore.RESET)
             for order in orders:
-                bianceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
-                qtyExecuted = 0
-                quoteQty = Decimal(order['qty']) * Decimal(order['price'])
-                print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
-                if order['trandata'] is not None:
-                    trandata = json.loads(order['trandata'])
-                    print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
-                   
-                    for transaction in trandata['executions']:
-                        qtyExecuted += Decimal(transaction['qty'])
-                        print(f"Transaction -> {transaction}")
-                    print(f"qtyExecuted  {qtyExecuted}")
-                #check if the placed qty is same as Executed qty if yes move the status to CLOSED(10)
-                # check if the cummulativeQuoteQty is same as qty * price 
-                print(Fore.BLUE+f"QTY PLACED {order['qty']}    QTY EXECUTED {qtyExecuted}"+Fore.RESET)
-                print(Fore.BLUE+f"QUOTE QTY PLACED {quoteQty}    QUOTE QTY EXECUTED {Decimal(bianceOrderDetail['cummulativeQuoteQty'])}"+Fore.RESET)
-                if qtyExecuted == Decimal(order['qty']) and quoteQty == Decimal(bianceOrderDetail['cummulativeQuoteQty']):
+                print(f"+++ Order details -> {order}")
+                binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
+                print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
+                binance_trandata = []
+                for trandata in binanceTradeDetail:
+                    new_trandata = {
+                                    "price":trandata['price'],
+                                    "qty":trandata['qty'],
+                                    "commission":trandata['commission'],
+                                    "commissionAsset":trandata['commissionAsset'],
+                                    "tradeId":trandata['id']
+                                }
+                    binance_trandata.append(new_trandata)
+                
+                print(Fore.BLUE+f"{binance_trandata}"+Fore.RESET)
+                trandata = json.loads(order['trandata'])
+                if binance_trandata == trandata['executions']:
+                    print("+++++++ Both are same +++++")
+                else:
+                    print("++++++++ Updating the new trandata ++++++")
                     updateBinanceTradeOrder(
+                        clientorderid=order['clientorderid'],
+                        trandata = json.dumps({"executions":binance_trandata})
+                    )
+                updateBinanceTradeOrder(
                         clientorderid = order['clientorderid'],
-                        status = BinanceTradeAction.CLOSED,
+                        action = BinanceTradeAction.CLOSED,
                     )
         except Exception as e:
             print(Fore.RED+f"{str(e)}"+Fore.RESET)
-        time.sleep(10)
-        
+        time.sleep(5)
+
+
+
+"""
+Pick the stale order with action create
+check the last updated time if its if more than 2 mins
+make an api call and get the trandata
+and push the response to event queue
+"""
+def processStaleOrders():
+    print(f"Process stale order started")
+    while True:
+        staleOrders = getBinanceTradeOrder(action=BinanceTradeAction.CREATE)
+        print(Fore.YELLOW+f"Stale Orders -> {staleOrders}"+Fore.RESET)
+        for order in staleOrders:
+            orderID = None
+            try:
+                lastupdatedTime = order['updatedtime']
+                currenctTime = datetime.datetime.now()
+                diff = currenctTime - lastupdatedTime
+                diff_in_minutes = diff.total_seconds() / 60
+                
+                if diff_in_minutes > 2:
+                    binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                    binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
+                    print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
+                    binance_trandata = []
+                    for trandata in binanceTradeDetail:
+                        new_trandata = {
+                                        "price":trandata['price'],
+                                        "qty":trandata['qty'],
+                                        "commission":trandata['commission'],
+                                        "commissionAsset":trandata['commissionAsset'],
+                                        "tradeId":trandata['id']
+                                    }
+                        binance_trandata.append(new_trandata)
+                    if binanceOrderDetail['status'] in ['FILLED',"PARTIALLY_FILLED","CANCELED","EXPIRED"]:
+                        binanceOrderDetail['fills'] = binance_trandata
+                    binanceOrderDetail['eventType'] = 'httpEvent'
+                    binanceOrderDetail['eventName'] = binanceOrderDetail['status']
+                    orderID = binanceOrderDetail['orderId']
+                    partitionId = int(binanceOrderDetail["orderId"]) % partitionCount
+                    KafkaHelper.producer.send('binance-events',binanceOrderDetail,partition = partitionId,key = b"httpEvent")
+                    print(Fore.GREEN+f"process_stale_order - eventName : get order details - data -> {binanceOrderDetail}"+Fore.RESET)
+            except Exception as e:
+                print(f"Unable to process the stale order - {orderID} due to {str(e)}")
+                    
+
 def init_thread(func):
     t = threading.Thread(target=func)
     t.start()
@@ -325,5 +389,24 @@ if __name__ == "__main__":
     binance = Binance()
     partitionCount = KafkaHelper.getPartitionCount()
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
-    init_thread(func=validateOrder)    
+    # init_thread(func=validateOrder)    
+    init_thread(func=processStaleOrders)    
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
+    
+    
+    
+# qtyExecuted = 0
+#                 quoteQty = Decimal(order['qty']) * Decimal(order['price'])
+#                 print(Fore.GREEN+f"Binance Order details -> {str(bianceOrderDetail)}"+Fore.RESET)
+#                 if order['trandata'] is not None:
+#                     trandata = json.loads(order['trandata'])
+#                     print(f"Type of trandata -> {type(trandata)}  data {trandata['executions']}")
+                    
+#                     for transaction in trandata['executions']:
+#                         qtyExecuted += Decimal(transaction['qty'])
+#                         print(f"Transaction -> {transaction}")
+#                     print(f"qtyExecuted  {qtyExecuted}")
+#                 #check if the placed qty is same as Executed qty if yes move the status to CLOSED(10)
+#                 # check if the cummulativeQuoteQty is same as qty * price 
+#                 print(Fore.BLUE+f"QTY PLACED {order['qty']}    QTY EXECUTED {qtyExecuted}"+Fore.RESET)
+#                 print(Fore.BLUE+f"QUOTE QTY PLACED {quoteQty}    QUOTE QTY EXECUTED {Decimal(bianceOrderDetail['cummulativeQuoteQty'])}"+Fore.RESET)"

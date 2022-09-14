@@ -124,7 +124,7 @@ def getBinanceTradeOrder(
             if isinstance(status,list):
                 query = query.filter(BINANCETRADEORDERS.action.in_(action))
             else:
-                query = query.filter(BINANCETRADEORDERS.action == action).one()
+                query = query.filter(BINANCETRADEORDERS.action == action)
         if ctid is not None:
             query = query.filter(BINANCETRADEORDERS.ctid == ctid).one()
             return query.as_dict()

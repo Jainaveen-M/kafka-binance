@@ -22,6 +22,7 @@ class BINANCETRADEORDERS(Base):
     exchgorderid = Column(String())
     trandata = Column(String())
     action = Column(Integer())
+    updatedtime = Column(DateTime())
 
     def as_dict(self):
         return {
@@ -37,7 +38,8 @@ class BINANCETRADEORDERS(Base):
             "exchgid" : self.exchgid, 
             "exchgorderid" : self.exchgorderid, 
             "trandata" : self.trandata,
-            "action" : self.action
+            "action" : self.action,
+            "updatedtime":self.updatedtime
         }
     
 class BinanceTradeOrderStatus():
