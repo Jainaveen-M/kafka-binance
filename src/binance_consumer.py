@@ -96,6 +96,15 @@ def processOrderConsumer(partitionID=None):
                     KafkaHelper.producer.send('binance-events',binanceOrder,partition = partitionId,key = b"httpEvent")
                     print(Fore.GREEN+f"Consumer_process_order - eventName : CANCEL_ORDER - data -> {binanceOrder}"+Fore.RESET)
                 
+                if message['eventName'] == "REJECT_ORDER":
+                    consumer.commit()
+                    print(f"Message from consumer -> {message}")
+                    updateBinanceTradeOrder(
+                            clientorderid = message['orderid'],
+                            status= BinanceTradeOrderStatus.INTERNAL_REJECT
+                        )   
+                    print(Fore.GREEN+f"Consumer_process_order - eventName : REJECT_ORDER - data -> { message['orderid']}"+Fore.RESET)
+                
             except Exception as e:
                 print(f"Unable to process order {orderID} due to {str(e)}")
                 

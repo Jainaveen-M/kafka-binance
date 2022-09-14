@@ -52,6 +52,7 @@ class BinanceTradeOrderStatus():
     ORDER_PLACED_AND_CANCELLED = 6
     ORDER_PLACED_AND_EXPIRED = 7
     REJECTED = 8
+    INTERNAL_REJECT = 9
 
 class BinanceTradeAction():
     CREATE = 1

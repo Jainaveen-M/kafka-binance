@@ -16,6 +16,9 @@ app = Flask(__name__)
 
 app_name = "Binance_demo"
 
+
+ORDER_THRESHOLD = 2
+
 @app.route("/",methods=["GET"])   
 def basic():
     binance = Binance()
@@ -373,19 +376,21 @@ def processStaleOrders():
                 diff = currenctTime - lastupdatedTime
                 diff_in_minutes = diff.total_seconds() / 60
                 if order['status'] == BinanceTradeOrderStatus.NEW:
-                    if diff_in_minutes > 2: # grater then 2 mins
-                        pass
+                    verifiedOrder = getVerifiedOrders(status=TradeOrderVerifiedStatus.PROCESSED,orderid=order['clientorderid'])
+                    print(f"Verified order in status 0 {verifiedOrder}")
+                    if diff_in_minutes > ORDER_THRESHOLD: # grater then 2 mins
+                        partitionId =int(verifiedOrder['orderid']) % partitionCount
+                        verifiedOrder['eventName'] = "REJECT_ORDER"
+                        print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
+                        KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)
                     else:
-                        print(f"Place order {order['status']}       {order['clientorderid']} ")
-                        verifiedOrder = getVerifiedOrders(status=TradeOrderVerifiedStatus.PROCESSED,orderid=order['clientorderid'])
-                        print(f"Verified order in status 0 {verifiedOrder}")
                         partitionId =int(verifiedOrder['orderid']) % partitionCount
                         verifiedOrder['eventName'] = "PLACE_ORDER"
                         print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
                         KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)                  
                 else:
                     print(f"___________++++++++ {diff_in_minutes}")
-                    if diff_in_minutes > 2: # grater then 2 mins
+                    if diff_in_minutes > ORDER_THRESHOLD: # grater then 2 mins
                         binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
                         binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
                         print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
