@@ -241,14 +241,16 @@ def getVerifiedOrders(
     try:
         if id is not None:
             query = query.filter(TRADEORDERVERIFIED.id == id).one()
+            return query.as_dict()
         if status is not None:
             query = query.filter(TRADEORDERVERIFIED.status == status)
         if clientid is not None:
             query = query.filter(TRADEORDERVERIFIED.clientid == clientid).one()
+            return query.as_dict()
         if orderid is not None:
             query = query.filter(TRADEORDERVERIFIED.orderid == orderid).one()
-        data = query.all()
-        for order in data:
+            return query.as_dict()
+        for order in query:
             result.append(order.as_dict())
         print(f"Verified Order Data from query {data}")
     except Exception as e:

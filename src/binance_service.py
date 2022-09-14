@@ -1,4 +1,3 @@
-import datetime
 import logging
 import time
 import uuid
@@ -10,6 +9,7 @@ from binance import Binance
 from colorama import Fore
 from DataController.binance import createTradeOrderVerified, getBinanceTradeOrder, getVerifiedOrders, updateBinanceTradeOrder, updateVerifiedOrders
 from DataModel.binance import BinanceTradeAction, BinanceTradeOrderStatus, TradeOrderVerifiedStatus
+import datetime
 
  
 app = Flask(__name__)
@@ -368,33 +368,45 @@ def processStaleOrders():
         for order in staleOrders:
             orderID = None
             try:
-                lastupdatedTime = order['updatedtime']
+                lastupdatedTime = datetime.datetime.strptime(order['updatedtime'],'%Y-%m-%d %H:%M:%S')
                 currenctTime = datetime.datetime.now()
                 diff = currenctTime - lastupdatedTime
                 diff_in_minutes = diff.total_seconds() / 60
-                
-                if diff_in_minutes > 2:
-                    binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
-                    binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
-                    print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
-                    binance_trandata = []
-                    for trandata in binanceTradeDetail:
-                        new_trandata = {
-                                        "price":trandata['price'],
-                                        "qty":trandata['qty'],
-                                        "commission":trandata['commission'],
-                                        "commissionAsset":trandata['commissionAsset'],
-                                        "tradeId":trandata['id']
-                                    }
-                        binance_trandata.append(new_trandata)
-                    if binanceOrderDetail['status'] in ['FILLED',"PARTIALLY_FILLED","CANCELED","EXPIRED"]:
-                        binanceOrderDetail['fills'] = binance_trandata
-                    binanceOrderDetail['eventType'] = 'httpEvent'
-                    binanceOrderDetail['eventName'] = binanceOrderDetail['status']
-                    orderID = binanceOrderDetail['orderId']
-                    partitionId = int(binanceOrderDetail["orderId"]) % partitionCount
-                    KafkaHelper.producer.send('binance-events',binanceOrderDetail,partition = partitionId,key = b"httpEvent")
-                    print(Fore.GREEN+f"process_stale_order - eventName : get order details - data -> {binanceOrderDetail}"+Fore.RESET)
+                if order['status'] == BinanceTradeOrderStatus.NEW:
+                    if diff_in_minutes > 2: # grater then 2 mins
+                        pass
+                    else:
+                        print(f"Place order {order['status']}       {order['clientorderid']} ")
+                        verifiedOrder = getVerifiedOrders(status=TradeOrderVerifiedStatus.PROCESSED,orderid=order['clientorderid'])
+                        print(f"Verified order in status 0 {verifiedOrder}")
+                        partitionId =int(verifiedOrder['orderid']) % partitionCount
+                        verifiedOrder['eventName'] = "PLACE_ORDER"
+                        print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
+                        KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)                  
+                else:
+                    print(f"___________++++++++ {diff_in_minutes}")
+                    if diff_in_minutes > 2: # grater then 2 mins
+                        binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                        binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
+                        print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
+                        binance_trandata = []
+                        for trandata in binanceTradeDetail:
+                            new_trandata = {
+                                            "price":trandata['price'],
+                                            "qty":trandata['qty'],
+                                            "commission":trandata['commission'],
+                                            "commissionAsset":trandata['commissionAsset'],
+                                            "tradeId":trandata['id']
+                                        }
+                            binance_trandata.append(new_trandata)
+                        if binanceOrderDetail['status'] in ['FILLED',"PARTIALLY_FILLED","CANCELED","EXPIRED"]:
+                            binanceOrderDetail['fills'] = binance_trandata
+                        binanceOrderDetail['eventType'] = 'httpEvent'
+                        binanceOrderDetail['eventName'] = binanceOrderDetail['status']
+                        orderID = binanceOrderDetail['orderId']
+                        partitionId = int(binanceOrderDetail["orderId"]) % partitionCount
+                        KafkaHelper.producer.send('binance-events',binanceOrderDetail,partition = partitionId,key = b"httpEvent")
+                        print(Fore.GREEN+f"process_stale_order - eventName : get order details - data -> {binanceOrderDetail}"+Fore.RESET)
             except Exception as e:
                 print(f"Unable to process the stale order - {orderID} due to {str(e)}")
         time.sleep(10)
@@ -415,7 +427,7 @@ if __name__ == "__main__":
     binance.createUserSocketThread(path="",onmessage=watchBinanceCyptoOrders)
     init_thread(func=processVerifiedOrder)
     init_thread(func=validateOrder)    
-    # init_thread(func=processStaleOrders)    
+    init_thread(func=processStaleOrders)    
     
     app.run(host="0.0.0.0", port=6091, threaded=True, debug=False)
     
