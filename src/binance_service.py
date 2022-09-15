@@ -393,7 +393,7 @@ def processStaleOrders():
                         verifiedOrder['eventName'] = "REJECT_ORDER"
                         print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
                         KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)
-                        print(Fore.GREEN+f"process_stale_order - eventName : REJECT_ORDER - data -> {verifiedOrder}"+Fore.RESET)    
+                        print(Fore.GREEN+f"process_stale_order - eventName : PLACE_ORDER - data -> {verifiedOrder}"+Fore.RESET)    
                     else:
                         partitionId =int(verifiedOrder['orderid']) % partitionCount
                         verifiedOrder['eventName'] = "PLACE_ORDER"
