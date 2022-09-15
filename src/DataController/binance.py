@@ -51,7 +51,7 @@ def set_binance_trade_order_obj(
         exchgorderid = None, 
         trandata = None,
         action = None,
-        updatedat = None,
+        updatedtime = None,
         set_keys = None,
 ):
     if set_keys is None:
