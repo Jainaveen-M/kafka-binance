@@ -74,7 +74,7 @@ def updateBinanceTradeOrder(
         exchgorderid = None, 
         trandata = None,
         action = None,
-        updatedat = None,
+        updatedtime = None,
 ):
     db_session = Session(bind=engine)
     
@@ -95,7 +95,7 @@ def updateBinanceTradeOrder(
         exchgorderid = exchgorderid, 
         trandata = trandata,
         action = action,
-        updatedat = updatedat
+        updatedtime = updatedtime
     )
     db_session.flush()
     db_session.commit()
