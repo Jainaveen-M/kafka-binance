@@ -51,6 +51,7 @@ def set_binance_trade_order_obj(
         exchgorderid = None, 
         trandata = None,
         action = None,
+        updatedat = None,
         set_keys = None,
 ):
     if set_keys is None:
@@ -73,6 +74,7 @@ def updateBinanceTradeOrder(
         exchgorderid = None, 
         trandata = None,
         action = None,
+        updatedat = None,
 ):
     db_session = Session(bind=engine)
     
@@ -93,6 +95,7 @@ def updateBinanceTradeOrder(
         exchgorderid = exchgorderid, 
         trandata = trandata,
         action = action,
+        updatedat = updatedat
     )
     db_session.flush()
     db_session.commit()

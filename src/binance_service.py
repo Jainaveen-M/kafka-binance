@@ -393,11 +393,13 @@ def processStaleOrders():
                         verifiedOrder['eventName'] = "REJECT_ORDER"
                         print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
                         KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)
+                        print(Fore.GREEN+f"process_stale_order - eventName : REJECT_ORDER - data -> {verifiedOrder}"+Fore.RESET)    
                     else:
                         partitionId =int(verifiedOrder['orderid']) % partitionCount
                         verifiedOrder['eventName'] = "PLACE_ORDER"
                         print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
-                        KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)                  
+                        KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)
+                        print(Fore.GREEN+f"process_stale_order - eventName : PLACE_ORDER - data -> {verifiedOrder}"+Fore.RESET)                  
                 else:
                     if diff_in_minutes > ORDER_THRESHOLD: # grater then 2 mins
                         binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
