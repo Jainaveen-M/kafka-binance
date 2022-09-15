@@ -321,36 +321,42 @@ def validateOrder():
             trandata = None
             for order in orders:
                 print(f"+++ Order details -> {order}")
-                binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
-                binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
-                print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
-                binance_trandata = []
-                for trandata in binanceTradeDetail:
-                    new_trandata = {
-                                    "price":trandata['price'],
-                                    "qty":trandata['qty'],
-                                    "commission":trandata['commission'],
-                                    "commissionAsset":trandata['commissionAsset'],
-                                    "tradeId":trandata['id']
-                                }
-                    binance_trandata.append(new_trandata)
-                
-                print(Fore.BLUE+f"{binance_trandata}"+Fore.RESET)
-                if order['trandata'] is not None:
-                    trandata = json.loads(order['trandata'])
-                    trandata = trandata['executions']
-                if binance_trandata == trandata:
-                    print("+++++++ Both are same +++++")
-                else:
-                    print("++++++++ Updating the new trandata ++++++")
+                if order['status'] == BinanceTradeOrderStatus.INTERNAL_REJECT:
                     updateBinanceTradeOrder(
-                        clientorderid=order['clientorderid'],
-                        trandata = json.dumps({"executions":binance_trandata})
-                    )
-                updateBinanceTradeOrder(
-                        clientorderid = order['clientorderid'],
-                        action = BinanceTradeAction.CLOSED,
-                    )
+                            clientorderid = order['clientorderid'],
+                            action = BinanceTradeAction.CLOSED,
+                        )
+                else:
+                    binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
+                    binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])
+                    print(Fore.BLUE+f"{binanceTradeDetail}"+Fore.RESET);
+                    binance_trandata = []
+                    for trandata in binanceTradeDetail:
+                        new_trandata = {
+                                        "price":trandata['price'],
+                                        "qty":trandata['qty'],
+                                        "commission":trandata['commission'],
+                                        "commissionAsset":trandata['commissionAsset'],
+                                        "tradeId":trandata['id']
+                                    }
+                        binance_trandata.append(new_trandata)
+                    
+                    print(Fore.BLUE+f"{binance_trandata}"+Fore.RESET)
+                    if order['trandata'] is not None:
+                        trandata = json.loads(order['trandata'])
+                        trandata = trandata['executions']
+                    if binance_trandata == trandata:
+                        print("+++++++ Both are same +++++")
+                    else:
+                        print("++++++++ Updating the new trandata ++++++")
+                        updateBinanceTradeOrder(
+                            clientorderid=order['clientorderid'],
+                            trandata = json.dumps({"executions":binance_trandata})
+                        )
+                    updateBinanceTradeOrder(
+                            clientorderid = order['clientorderid'],
+                            action = BinanceTradeAction.CLOSED,
+                        )
         except Exception as e:
             print(Fore.RED+f"{str(e)}"+Fore.RESET)
         time.sleep(10)
@@ -375,6 +381,7 @@ def processStaleOrders():
                 currenctTime = datetime.datetime.now()
                 diff = currenctTime - lastupdatedTime
                 diff_in_minutes = diff.total_seconds() / 60
+                print(f"___________++++++++ {diff_in_minutes}")
                 if order['status'] == BinanceTradeOrderStatus.NEW:
                     verifiedOrder = getVerifiedOrders(status=TradeOrderVerifiedStatus.PROCESSED,orderid=order['clientorderid'])
                     print(f"Verified order in status 0 {verifiedOrder}")
@@ -392,7 +399,6 @@ def processStaleOrders():
                         print(Fore.YELLOW+f"partition ID for create order -> {partitionId}"+Fore.RESET)
                         KafkaHelper.producer.send('binance-orders',verifiedOrder,partition=partitionId)                  
                 else:
-                    print(f"___________++++++++ {diff_in_minutes}")
                     if diff_in_minutes > ORDER_THRESHOLD: # grater then 2 mins
                         binanceOrderDetail = binance.get_order(symbol = order['coinpair'],origClientOrderId = order['clientorderid'])
                         binanceTradeDetail = binance.get_my_trades(symbol = order['coinpair'],orderId = order['exchgorderid'])

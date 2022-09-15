@@ -100,7 +100,8 @@ def processOrderConsumer(partitionID=None):
                     print(f"Message from consumer -> {message}")
                     updateBinanceTradeOrder(
                             clientorderid = message['orderid'],
-                            status= BinanceTradeOrderStatus.INTERNAL_REJECT
+                            status = BinanceTradeOrderStatus.INTERNAL_REJECT,
+                            action = BinanceTradeAction.TO_CLOSE, 
                         )
                     consumer.commit()   
                     print(Fore.GREEN+f"Consumer_process_order - eventName : REJECT_ORDER - data -> { message['orderid']}"+Fore.RESET)
